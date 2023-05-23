@@ -1,0 +1,13 @@
+{
+  "name": "paint-root",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -F pixel-paint build",
+    "dev:app": "pnpm -F app dev",
+    "build:app": "pnpm -F app build"
+  },
+  "devDependencies": {
+    "tsup": "^6.7.0"
+  },
+  "packageManager": "pnpm@7.26.3"
+}
