@@ -10,15 +10,17 @@ const WindowWrapper = styled.div<Position & { z: number }>`
     position: fixed;
     top: 0;
     left: 0;
-    min-width: 20vw;
-    max-width: 60vw;
+    /* min-width: 20vw;
+    max-width: 60vw; */
+
+    width: min-content;
 
     ${({ x, y }) => `transform: translate(${x}px, ${y}px);`}
     z-index: ${({ z }) => z};
 
     background: white;
     color: black;
-    border: 2px solid black;
+    border: 2px outset black;
     overflow: auto;
 
     display: grid;
@@ -26,15 +28,15 @@ const WindowWrapper = styled.div<Position & { z: number }>`
     grid-template-rows: min-content 1fr;
 
     .window__title {
-        height: 1.625rem;
+        height: 1.825rem;
         padding: 0 0.5rem;
         user-select: none;
-        font-family: monospace;
-        font-size: 0.75rem;
-        font-weight: 600;
-        line-height: 1.625rem;
-        border-bottom: 1px solid black;
+        line-height: 1.925rem;
+        border-bottom: 2px outset black;
         cursor: grab;
+        font-weight: bold;
+
+        font-size: 1.125rem;
     }
 `
 
@@ -89,7 +91,7 @@ export default function Window({ children, title = 'Untitled' }: PropsWithChildr
             z={99}
             ref={windowRef}
         >
-            <div className="window__title" onMouseDown={initializeDrag}>
+            <div className="window__title font-sm" onMouseDown={initializeDrag}>
                 {title}
             </div>
             {children}

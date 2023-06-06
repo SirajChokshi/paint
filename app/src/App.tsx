@@ -1,5 +1,6 @@
-import PixelCanvasRenderer from "./components/Canvas";
-import { Background } from "./components/Desktop";
+import PixelCanvasRenderer from "./components/core/Canvas";
+import { Background } from "./components/core/Desktop";
+import Tools from "./components/core/Tools";
 import Window from "./components/Window";
 
 function App() {
@@ -7,9 +8,11 @@ function App() {
   return (
     <>
       <Background />
-      <h1>Paint</h1>
       <Window>
         <PixelCanvasRenderer />     
+      </Window>
+      <Window>
+        <Tools />
       </Window>
     </>
   );

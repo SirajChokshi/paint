@@ -32,7 +32,7 @@ export default function PixelCanvasRenderer() {
         })
 
         setPa(pixelArt)
-        ;(window as any).pa = pixelArt
+        window.pixel = pixelArt
 
         function draw(w: number, h: number, pa: PixelCanvas) {
             pa.ctx.clearRect(0, 0, w, h)
