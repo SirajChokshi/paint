@@ -28,26 +28,7 @@ export class PixelCanvas {
       this.renderer = ctx
       this.ctx = document.createElement('canvas').getContext('2d')!
       this.setPixelSize(options?.pixelSize ?? 10)
-  }
-
-  setColor(color: string, mapToPalette: boolean = true) {
-    const rgb = rgbFromHex(color)
-
-
-    if (mapToPalette) {
-         color =  getClosestColor(rgb, [
-            { r: 0, g: 0, b: 0 },
-            { r: 255, g: 255, b: 255 },
-            { r: 255, g: 0, b: 0 },
-            { r: 0, g: 255, b: 0 },
-            { r: 0, g: 0, b: 255 },
-            { r: 255, g: 255, b: 0 },
-            { r: 255, g: 0, b: 255 },
-         ])
     }
-
-    this.color = color
-  }
 
   setPixelSize(pixelSize: number) {
       this.pixelSize = pixelSize
