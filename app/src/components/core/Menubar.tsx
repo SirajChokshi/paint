@@ -70,7 +70,7 @@ export default function Menubar() {
             name: "Quit",
             onClick: () => {
               if (window.top) {
-                window.top.postMessage("{ action: quit }", "*");
+                window.top.postMessage("teardown", "*");
               }
             },
           },
