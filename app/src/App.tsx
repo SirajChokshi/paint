@@ -1,5 +1,6 @@
 import PixelCanvasRenderer from "./components/core/Canvas";
-import { Background } from "./components/core/Desktop";
+import Desktop from "./components/core/Desktop";
+import Menubar from "./components/core/Menubar";
 import Tools from "./components/core/Tools";
 import Window from "./components/Window";
 
@@ -7,13 +8,16 @@ function App() {
 
   return (
     <>
-      <Background />
-      <Window>
-        <PixelCanvasRenderer />     
-      </Window>
-      <Window>
-        <Tools />
-      </Window>
+      <Menubar />
+      <main>
+        <Desktop />
+        <Window>
+          <Tools />
+        </Window>
+        <Window>
+          <PixelCanvasRenderer />     
+        </Window>
+      </main>
     </>
   );
 }

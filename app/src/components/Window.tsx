@@ -1,100 +1,76 @@
-import styled from '@emotion/styled'
-import { PropsWithChildren, useRef, useState } from 'react'
-
-interface Position {
-    x: number
-    y: number
-}
+import styled from "@emotion/styled";
+import { PropsWithChildren, useEffect, useRef } from "react";
+import { v4 } from "uuid";
+import { useWindowStore } from "../stores/windowStore";
+import useDrag, { Position } from "../hooks/useDrag";
 
 const WindowWrapper = styled.div<Position & { z: number }>`
-    position: fixed;
-    top: 0;
-    left: 0;
-    /* min-width: 20vw;
-    max-width: 60vw; */
+  position: absolute;
+  top: 0;
+  left: 0;
 
-    width: min-content;
+  width: min-content;
 
-    ${({ x, y }) => `transform: translate(${x}px, ${y}px);`}
-    z-index: ${({ z }) => z};
+  ${({ x, y }) => `transform: translate(${x}px, ${y}px);`}
+  z-index: ${({ z }) => z};
 
-    background: white;
-    color: black;
-    border: 2px outset black;
-    overflow: auto;
+  background: white;
+  color: black;
+  border: 2px outset black;
+  overflow: auto;
 
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: min-content 1fr;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: min-content 1fr;
 
-    .window__title {
-        height: 1.825rem;
-        padding: 0 0.5rem;
-        user-select: none;
-        line-height: 1.925rem;
-        border-bottom: 2px outset black;
-        cursor: grab;
-        font-weight: bold;
+  .window__title {
+    height: 1.825rem;
+    padding: 0 0.5rem;
+    user-select: none;
+    line-height: 1.925rem;
+    border-bottom: 2px outset black;
+    cursor: grab;
+    font-weight: bold;
 
-        font-size: 1.125rem;
-    }
-`
+    font-size: 1.125rem;
+  }
+`;
 
 interface WindowProps {
-    title?: string
+  title?: string;
 }
 
-export default function Window({ children, title = 'Untitled' }: PropsWithChildren<WindowProps>) {
-    const [position, setPosition] = useState<Position>({
-        x: 0,
-        y: 0,
-    })
+export default function Window({
+  children,
+  title = "Untitled",
+}: PropsWithChildren<WindowProps>) {
+  const windowRef = useRef<HTMLDivElement>(null);
+  const { position, handler } = useDrag(windowRef);
+  const id = useRef(v4());
 
-    const windowRef = useRef<HTMLDivElement>(null)
-    const dragProps = useRef<any>()
+  const { addWindow, removeWindow, touchWindow, getStackOrder } =
+    useWindowStore();
 
-    const initializeDrag = (event: React.MouseEvent) => {
-        if (!windowRef.current) return
+  useEffect(() => {
+    addWindow({ id: id.current });
 
-        const { target, clientX, clientY } = event
-        const { offsetTop, offsetLeft } = target as HTMLDivElement
-        const { left, top } = windowRef.current.getBoundingClientRect()
+    return () => {
+      removeWindow(id.current);
+    };
+  }, []);
 
-        dragProps.current = {
-            dragStartLeft: left - offsetLeft,
-            dragStartTop: top - offsetTop,
-            dragStartX: clientX,
-            dragStartY: clientY,
-        }
-
-        window.addEventListener('mousemove', startDragging, false)
-        window.addEventListener('mouseup', stopDragging, false)
-    }
-
-    const startDragging = ({ clientX, clientY }: MouseEvent) => {
-        setPosition({
-            x: dragProps.current.dragStartLeft + clientX - dragProps.current.dragStartX,
-            y: dragProps.current.dragStartTop + clientY - dragProps.current.dragStartY,
-        })
-    }
-
-    const stopDragging = () => {
-        window.removeEventListener('mousemove', startDragging, false)
-        window.removeEventListener('mouseup', stopDragging, false)
-    }
-
-    return (
-        <WindowWrapper
-            className="window"
-            x={position.x}
-            y={position.y}
-            z={99}
-            ref={windowRef}
-        >
-            <div className="window__title font-sm" onMouseDown={initializeDrag}>
-                {title}
-            </div>
-            {children}
-        </WindowWrapper>
-    )
+  return (
+    <WindowWrapper
+      className="window"
+      {...position}
+      z={getStackOrder(id.current)}
+      ref={windowRef}
+      onMouseDown={() => touchWindow(id.current)}
+    >
+      <div className="window__title font-sm" {...handler}>
+        {title}
+      </div>
+      {children}
+    </WindowWrapper>
+  );
 }
