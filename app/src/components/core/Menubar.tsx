@@ -64,6 +64,19 @@ export default function Menubar() {
   return (
     <MenubarWrapper className="font-sm">
       <Menu
+        label="⌘"
+        actions={[
+          {
+            name: "Quit",
+            onClick: () => {
+              if (window.top) {
+                window.top.postMessage("{ action: quit }", "*");
+              }
+            },
+          },
+        ]}
+      />
+      <Menu
         label="File"
         actions={[
           { name: "New", onClick: () => {} },
