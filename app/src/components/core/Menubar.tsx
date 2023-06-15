@@ -2,6 +2,7 @@ import * as Toolbar from "@radix-ui/react-toolbar";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import styled from "@emotion/styled";
 import { Action } from "../../types/ui";
+import { useFileStore } from "../../stores/fileStore";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   background-color: #eee;
@@ -61,6 +62,8 @@ function Menu(props: MenuProps) {
 }
 
 export default function Menubar() {
+  const { save } = useFileStore();
+
   return (
     <MenubarWrapper className="font-sm">
       <Menu
@@ -79,8 +82,20 @@ export default function Menubar() {
       <Menu
         label="File"
         actions={[
-          { name: "New", onClick: () => {} },
-          { name: "Open", onClick: () => {} },
+          {
+            name: "New",
+            onClick: () => {
+              window.pixel.clear();
+            },
+          },
+          {
+            name: "Save",
+            onClick: () => {
+              const uri = window.pixel.export();
+
+              save({ name: "Untitled", payload: uri });
+            },
+          },
         ]}
       />
       <Menu

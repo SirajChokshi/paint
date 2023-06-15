@@ -63,7 +63,7 @@ export default function Window({
     <WindowWrapper
       className="window"
       {...position}
-      z={getStackOrder(id.current)}
+      z={getStackOrder(id.current) + 99}
       ref={windowRef}
       onMouseDown={() => touchWindow(id.current)}
     >
