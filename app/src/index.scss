@@ -1,5 +1,5 @@
 :root {
-  --garamond-stack:  "Palatino Linotype", Palatino, Palladio, "URW Palladio L", "Book Antiqua", Baskerville, "Bookman Old Style", "Bitstream Charter", "Nimbus Roman No9 L", Garamond, "Apple Garamond", "ITC Garamond Narrow", "New Century Schoolbook", "Century Schoolbook", "Century Schoolbook L", Georgia, serif;
+  --garamond-stack: "Palatino Linotype", Palatino, Palladio, "URW Palladio L", "Book Antiqua", Baskerville, "Bookman Old Style", "Bitstream Charter", "Nimbus Roman No9 L", Garamond, "Apple Garamond", "ITC Garamond Narrow", "New Century Schoolbook", "Century Schoolbook", "Century Schoolbook L", Georgia, serif;
   
   --redaction-35: 'Redaction 35', var(--garamond-stack);
   --redaction-50: 'Redaction 50', var(--garamond-stack);
@@ -11,13 +11,30 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  -moz-osx-font-smoothing: grayscale; 
   -webkit-text-size-adjust: 100%;
 }
 
+* {
+  user-select: none;
+}
+
 #root {
-  background: blue;
+  font-size: 18px;
   display: contents;
+
+  --gray-999: #000000;
+  --gray-950:#0b0b0b;
+  --gray-900: #222222;
+  --gray-700: #444444;
+  --gray-600: #555555;
+  --gray-500:#777777;
+  --gray-400: #888888;
+  --gray-300: #aaaaaa;
+  --gray-200:#bbbbbb;
+  --gray-100: #dddddd;
+  --gray-50: #eeeeee;
+  --gray-0: #ffffff;
 }
 
 body {

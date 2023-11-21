@@ -3,37 +3,50 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import styled from "@emotion/styled";
 import { Action } from "../../types/ui";
 import { useFileStore } from "../../stores/fileStore";
+import { FrameBus } from "../../lib/frame";
 
 const MenubarWrapper = styled(Toolbar.Root)`
-  background-color: #eee;
-  border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+
+  background-color: var(--gray-0);
+  border-bottom: 2px solid black;
+  height: 1.825rem;
   width: 100%;
   z-index: 999;
 
   button {
     all: unset;
-    padding: 0 8px;
+    padding: 0 0.75rem;
     cursor: pointer;
+
+    &:hover,
+    &[aria-expanded="true"] {
+      background-color: var(--gray-999);
+      color: var(--gray-0);
+    }
   }
 `;
 
 const MenuDropdownContent = styled(DropdownMenu.Content)`
   background-color: #fff;
-  border: 1px solid #ccc;
+  border: 2px solid var(--gray-999);
+  box-shadow: 2px 2px black;
 
   min-width: 100px;
 
   display: flex;
   flex-direction: column;
 
-  button {
+  &&& button {
     cursor: pointer;
 
     &:hover,
     &:focus {
       outline: none;
-      background: blue;
-      color: white;
+      background: var(--gray-999);
+      color: var(--gray-0);
     }
   }
 `;
@@ -41,7 +54,7 @@ const MenuDropdownContent = styled(DropdownMenu.Content)`
 interface MenuProps {
   label: string;
   // menu actions cannot be overloaded
-  actions: Action<{}>[];
+  actions: Action<unknown>[];
 }
 
 function Menu(props: MenuProps) {
@@ -70,12 +83,16 @@ export default function Menubar() {
         label="⌘"
         actions={[
           {
+            name: "About",
+            onClick: () => {},
+          },
+          {
+            name: "Preferences",
+            onClick: () => {},
+          },
+          {
             name: "Quit",
-            onClick: () => {
-              if (window.top) {
-                window.top.postMessage("teardown", "*");
-              }
-            },
+            onClick: () => FrameBus.quit(),
           },
         ]}
       />
@@ -91,9 +108,15 @@ export default function Menubar() {
           {
             name: "Save",
             onClick: () => {
+              const name = window.prompt("Save as:");
+
+              if (name === null) {
+                return;
+              }
+
               const uri = window.pixel.export();
 
-              save({ name: "Untitled", payload: uri });
+              save({ name, payload: uri });
             },
           },
         ]}

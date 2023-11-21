@@ -161,6 +161,8 @@ export class PixelCanvas {
   }
 
   clear() {
+    const currentFillStyle = this.renderer.fillStyle;
+
     this.renderer.fillStyle = "#ffffff";
     this.renderer.fillRect(
       0,
@@ -168,6 +170,8 @@ export class PixelCanvas {
       this.renderer.canvas.width,
       this.renderer.canvas.height
     );
+
+    this.renderer.fillStyle = currentFillStyle;
   }
 
   export() {
@@ -175,6 +179,8 @@ export class PixelCanvas {
   }
 
   import(data: string) {
+    this.clear();
+
     const img = new Image();
     img.src = data;
     img.onload = () => {

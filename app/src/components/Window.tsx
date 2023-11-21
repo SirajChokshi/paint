@@ -16,7 +16,8 @@ const WindowWrapper = styled.div<Position & { z: number }>`
 
   background: white;
   color: black;
-  border: 2px outset black;
+  border: 2px solid black;
+  box-shadow: 2px 2px black;
   overflow: auto;
 
   display: grid;
@@ -28,7 +29,7 @@ const WindowWrapper = styled.div<Position & { z: number }>`
     padding: 0 0.5rem;
     user-select: none;
     line-height: 1.925rem;
-    border-bottom: 2px outset black;
+    border-bottom: 2px solid black;
     cursor: grab;
     font-weight: bold;
 
@@ -38,11 +39,13 @@ const WindowWrapper = styled.div<Position & { z: number }>`
 
 interface WindowProps {
   title?: string;
+  alwaysOnTop?: boolean;
 }
 
 export default function Window({
   children,
-  title = "Untitled",
+  title,
+  alwaysOnTop,
 }: PropsWithChildren<WindowProps>) {
   const windowRef = useRef<HTMLDivElement>(null);
   const { position, handler } = useDrag(windowRef);
@@ -52,24 +55,38 @@ export default function Window({
     useWindowStore();
 
   useEffect(() => {
-    addWindow({ id: id.current });
+    const windowId = id.current;
+
+    addWindow({ id: windowId });
 
     return () => {
-      removeWindow(id.current);
+      removeWindow(windowId);
     };
   }, []);
+
+  // use the whole window as a drag handle if there is no title
+  const windowHandler = title ? {} : handler;
 
   return (
     <WindowWrapper
       className="window"
       {...position}
-      z={getStackOrder(id.current) + 99}
+      z={alwaysOnTop ? 9999 : getStackOrder(id.current) + 99}
       ref={windowRef}
       onMouseDown={() => touchWindow(id.current)}
+      onClick={(e) => {
+        // prevent clicks from bubbling up to the desktop
+        e.stopPropagation();
+      }}
+      {...windowHandler}
     >
-      <div className="window__title font-sm" {...handler}>
-        {title}
-      </div>
+      {title ? (
+        // only render the title if it exists
+        <div className="window__title font-sm" {...handler}>
+          {title}
+        </div>
+      ) : null}
+
       {children}
     </WindowWrapper>
   );

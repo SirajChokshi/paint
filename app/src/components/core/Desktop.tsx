@@ -31,7 +31,7 @@ const DesktopWrapper = styled.div`
 
     filter: blur(1px);
 
-    background: #c3c3ea;
+    background: var(--gray-600);
 
     opacity: 0.8;
     background-size: 0.5rem 0.5rem;
@@ -77,13 +77,13 @@ const DesktopIconWrapper = styled.button`
       position: absolute;
       top: 0;
       left: 0;
-      background: #7e7ec1;
-      opacity: 0.5;
+      background: var(--gray-500);
+      opacity: 0.3;
     }
 
     span {
-      background: #7e7ec1;
-      color: white;
+      background: var(--gray-400);
+      color: var(--gray-0);
     }
   }
 `;
@@ -138,7 +138,10 @@ export default function Desktop() {
           <DesktopIcon
             key={file.name + file.date}
             onClick={handleClickFactory(file)}
-            onOpen={() => window.pixel.import(file.payload)}
+            onOpen={() => {
+              window.pixel.import(file.payload);
+              setActive(null);
+            }}
             active={active?.payload === file.payload}
             {...file}
           />
