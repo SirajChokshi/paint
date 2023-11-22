@@ -28,10 +28,22 @@ function App() {
       <Menubar />
       <main>
         <Desktop />
-        <Window title="Tools">
+        <Window
+          title="Tools"
+          defaultPosition={{
+            x: 15,
+            y: 15,
+          }}
+        >
           <Tools />
         </Window>
-        <Window title="Untitled">
+        <Window
+          title="Untitled"
+          defaultPosition={{
+            x: 150,
+            y: 15,
+          }}
+        >
           <PixelCanvasRenderer />
         </Window>
         <AboutWindow />

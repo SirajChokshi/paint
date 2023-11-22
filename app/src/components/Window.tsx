@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import { PropsWithChildren, useEffect, useRef } from "react";
 import { v4 } from "uuid";
-import { useWindowStore } from "../stores/windowStore";
+import { Position, useWindowStore } from "../stores/windowStore";
 import { useDraggable } from "@dnd-kit/core";
 
 const WindowWrapper = styled.div<{
@@ -48,6 +48,7 @@ interface WindowProps {
   alwaysOnTop?: boolean;
   id?: string;
   startClosed?: boolean;
+  defaultPosition?: Position;
 }
 
 export default function Window({
@@ -56,6 +57,7 @@ export default function Window({
   alwaysOnTop,
   id: controlledId,
   startClosed,
+  defaultPosition,
 }: PropsWithChildren<WindowProps>) {
   const id = useRef(controlledId ?? v4());
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -77,12 +79,12 @@ export default function Window({
 
     const windowId = id.current;
 
-    addWindow({ id: windowId, position: { x: 0, y: 0 } });
+    addWindow({ id: windowId, position: defaultPosition ?? { x: 0, y: 0 } });
 
     return () => {
       removeWindow(windowId);
     };
-  }, [addWindow, removeWindow, controlledId, startClosed]);
+  }, [addWindow, removeWindow, controlledId]);
 
   if (!maybeWindow) return null;
 
