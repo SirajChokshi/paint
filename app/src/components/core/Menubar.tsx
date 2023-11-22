@@ -1,20 +1,20 @@
-import * as Toolbar from "@radix-ui/react-toolbar";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import * as Toolbar from "@radix-ui/react-menubar";
 import styled from "@emotion/styled";
-import { Action } from "../../types/ui";
 import { useFileStore } from "../../stores/fileStore";
 import { FrameBus } from "../../lib/frame";
+import { Menu } from "./Menu";
+import { useWindowStore } from "../../stores/windowStore";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   display: flex;
   align-items: stretch;
   justify-content: flex-start;
 
-  background-color: var(--gray-0);
+  background-color: white;
   border-bottom: 2px solid black;
   height: 1.825rem;
   width: 100%;
-  z-index: 999;
+  z-index: 9999;
 
   button {
     all: unset;
@@ -23,68 +23,31 @@ const MenubarWrapper = styled(Toolbar.Root)`
 
     &:hover,
     &[aria-expanded="true"] {
-      background-color: var(--gray-999);
-      color: var(--gray-0);
+      background-color: black;
+      color: white;
     }
   }
 `;
-
-const MenuDropdownContent = styled(DropdownMenu.Content)`
-  background-color: #fff;
-  border: 2px solid var(--gray-999);
-  box-shadow: 2px 2px black;
-
-  min-width: 100px;
-
-  display: flex;
-  flex-direction: column;
-
-  &&& button {
-    cursor: pointer;
-
-    &:hover,
-    &:focus {
-      outline: none;
-      background: var(--gray-999);
-      color: var(--gray-0);
-    }
-  }
-`;
-
-interface MenuProps {
-  label: string;
-  // menu actions cannot be overloaded
-  actions: Action<unknown>[];
-}
-
-function Menu(props: MenuProps) {
-  return (
-    <DropdownMenu.Root>
-      <Toolbar.Button asChild>
-        <DropdownMenu.Trigger>{props.label}</DropdownMenu.Trigger>
-      </Toolbar.Button>
-      <MenuDropdownContent align="start">
-        {props.actions.map((action) => (
-          <DropdownMenu.Item onSelect={action.onClick} asChild>
-            <button>{action.name}</button>
-          </DropdownMenu.Item>
-        ))}
-      </MenuDropdownContent>
-    </DropdownMenu.Root>
-  );
-}
 
 export default function Menubar() {
-  const { save } = useFileStore();
+  const { addWindow } = useWindowStore();
+  const { save, files } = useFileStore();
 
   return (
     <MenubarWrapper className="font-sm">
       <Menu
-        label="⌘"
         actions={[
           {
             name: "About",
-            onClick: () => {},
+            onClick: () => {
+              addWindow({
+                id: "about",
+                position: {
+                  x: 10,
+                  y: 10,
+                },
+              });
+            },
           },
           {
             name: "Preferences",
@@ -95,15 +58,26 @@ export default function Menubar() {
             onClick: () => FrameBus.quit(),
           },
         ]}
-      />
+      >
+        <button>⌘</button>
+      </Menu>
       <Menu
-        label="File"
         actions={[
           {
             name: "New",
             onClick: () => {
               window.pixel.clear();
             },
+          },
+          {
+            name: "Open",
+            items: files.slice(0, 5).map((file) => ({
+              name: `${file.name}.img`,
+              onClick: () => {
+                window.pixel.clear();
+                window.pixel.import(file.payload);
+              },
+            })),
           },
           {
             name: "Save",
@@ -120,14 +94,17 @@ export default function Menubar() {
             },
           },
         ]}
-      />
+      >
+        <button>File</button>
+      </Menu>
       <Menu
-        label="Edit"
         actions={[
           { name: "Undo", onClick: () => {} },
           { name: "Redo", onClick: () => {} },
         ]}
-      />
+      >
+        <button>Edit</button>
+      </Menu>
     </MenubarWrapper>
   );
 }

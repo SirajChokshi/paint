@@ -23,25 +23,10 @@
 }
 
 @font-face {
-  font-family: 'Redaction 50';
+  font-family: 'Chicago';
   font-style: normal;
   font-weight: normal;
   font-display: swap;
-  src: url('/fonts/Redaction_50-Regular.woff2?v=1.0') format('woff2');
-}
-
-@font-face {
-  font-family: 'Redaction 50';
-  font-style: normal;
-  font-weight: bold;
-  font-display: swap;
-  src: url('/fonts/Redaction_50-Bold.woff2?v=1.0') format('woff2');
-}
-
-@font-face {
-  font-family: 'Redaction 50';
-  font-style: italic;
-  font-weight: normal;
-  font-display: swap;
-  src: url('/fonts/Redaction_50-Italic.woff2?v=1.0') format('woff2');
+  size-adjust: 112.5%;
+  src: url('/fonts/ChiKareGo.ttf?v=1.0') format('truetype');
 }

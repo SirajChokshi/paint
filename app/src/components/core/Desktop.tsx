@@ -59,6 +59,9 @@ const DesktopIconWrapper = styled.button`
   justify-content: center;
   flex-direction: column;
 
+  width: 84px;
+  height: 84px;
+
   .icon {
     width: 48px;
     height: 48px;
@@ -66,6 +69,19 @@ const DesktopIconWrapper = styled.button`
     box-sizing: border-box;
     background: red;
     position: relative;
+  }
+
+  span {
+    display: block;
+    padding: 0 2px;
+    max-width: 100%;
+
+    line-height: 1.25;
+
+    text-align: center;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
   &[data-active="true"] {
@@ -82,7 +98,7 @@ const DesktopIconWrapper = styled.button`
     }
 
     span {
-      background: var(--gray-400);
+      background: var(--gray-300);
       color: var(--gray-0);
     }
   }
@@ -139,6 +155,7 @@ export default function Desktop() {
             key={file.name + file.date}
             onClick={handleClickFactory(file)}
             onOpen={() => {
+              window.pixel.clear();
               window.pixel.import(file.payload);
               setActive(null);
             }}

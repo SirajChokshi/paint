@@ -7,6 +7,8 @@ const StyledCanvas = styled.canvas`
   background: white;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+
+  cursor: crosshair;
 `;
 
 (window as any).mode = "line";

@@ -2,16 +2,20 @@ import styled from "@emotion/styled";
 import { PropsWithChildren, useEffect, useRef } from "react";
 import { v4 } from "uuid";
 import { useWindowStore } from "../stores/windowStore";
-import useDrag, { Position } from "../hooks/useDrag";
+import { useDraggable } from "@dnd-kit/core";
 
-const WindowWrapper = styled.div<Position & { z: number }>`
+const WindowWrapper = styled.div<{
+  z: number;
+  left: number;
+  top: number;
+  allDraggable: boolean;
+}>`
   position: absolute;
-  top: 0;
-  left: 0;
+  top: ${({ top }) => top}px;
+  left: ${({ left }) => left}px;
 
   width: min-content;
 
-  ${({ x, y }) => `transform: translate(${x}px, ${y}px);`}
   z-index: ${({ z }) => z};
 
   background: white;
@@ -23,6 +27,8 @@ const WindowWrapper = styled.div<Position & { z: number }>`
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: min-content 1fr;
+
+  ${({ allDraggable }) => (allDraggable ? "cursor: grab;" : "")}
 
   .window__title {
     height: 1.825rem;
@@ -40,49 +46,71 @@ const WindowWrapper = styled.div<Position & { z: number }>`
 interface WindowProps {
   title?: string;
   alwaysOnTop?: boolean;
+  id?: string;
+  startClosed?: boolean;
 }
 
 export default function Window({
   children,
   title,
   alwaysOnTop,
+  id: controlledId,
+  startClosed,
 }: PropsWithChildren<WindowProps>) {
-  const windowRef = useRef<HTMLDivElement>(null);
-  const { position, handler } = useDrag(windowRef);
-  const id = useRef(v4());
+  const id = useRef(controlledId ?? v4());
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: id.current,
+  });
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
 
-  const { addWindow, removeWindow, touchWindow, getStackOrder } =
+  const { getWindow, addWindow, removeWindow, touchWindow, getStackOrder } =
     useWindowStore();
 
+  const maybeWindow = getWindow(id.current);
+
   useEffect(() => {
+    if (startClosed) return;
+
     const windowId = id.current;
 
-    addWindow({ id: windowId });
+    addWindow({ id: windowId, position: { x: 0, y: 0 } });
 
     return () => {
       removeWindow(windowId);
     };
-  }, []);
+  }, [addWindow, removeWindow, controlledId, startClosed]);
+
+  if (!maybeWindow) return null;
+
+  const { position } = maybeWindow;
 
   // use the whole window as a drag handle if there is no title
-  const windowHandler = title ? {} : handler;
+  const windowHandler = title
+    ? {}
+    : {
+        ...listeners,
+        ...attributes,
+      };
 
   return (
     <WindowWrapper
+      ref={setNodeRef}
       className="window"
-      {...position}
+      style={style}
+      left={position.x}
+      top={position.y}
       z={alwaysOnTop ? 9999 : getStackOrder(id.current) + 99}
-      ref={windowRef}
+      allDraggable={!title}
       onMouseDown={() => touchWindow(id.current)}
-      onClick={(e) => {
-        // prevent clicks from bubbling up to the desktop
-        e.stopPropagation();
-      }}
       {...windowHandler}
     >
       {title ? (
         // only render the title if it exists
-        <div className="window__title font-sm" {...handler}>
+        <div className="window__title font-sm" {...attributes} {...listeners}>
           {title}
         </div>
       ) : null}

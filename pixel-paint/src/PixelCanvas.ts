@@ -178,13 +178,11 @@ export class PixelCanvas {
     return this.renderer.canvas.toDataURL();
   }
 
-  import(data: string) {
-    this.clear();
-
+  import(data: string, scale = 1) {
     const img = new Image();
     img.src = data;
     img.onload = () => {
-      this.renderer.drawImage(img, 0, 0);
+      this.renderer.drawImage(img, 0, 0, img.width * scale, img.height * scale);
     };
   }
 }
