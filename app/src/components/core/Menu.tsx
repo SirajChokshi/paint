@@ -19,11 +19,17 @@ const menuContentCSS = css`
     font-size: 1.125rem;
     cursor: pointer;
 
-    &:hover,
-    &:focus {
-      outline: none;
-      background: black;
-      color: white;
+    &:not([data-disabled]) {
+      &:hover,
+      &:focus {
+        outline: none;
+        background: black;
+        color: white;
+      }
+    }
+
+    &[data-disabled] {
+      color: #777;
     }
   }
 `;
@@ -73,6 +79,7 @@ export function Menu(props: MenuProps) {
 
             return (
               <DropdownMenu.Item
+                disabled={action.disabled === true}
                 key={action.name}
                 onSelect={action.onClick}
                 asChild

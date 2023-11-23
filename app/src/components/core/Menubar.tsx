@@ -71,13 +71,22 @@ export default function Menubar() {
           },
           {
             name: "Open",
-            items: files.slice(0, 5).map((file) => ({
-              name: `${file.name}.img`,
-              onClick: () => {
-                window.pixel.clear();
-                window.pixel.import(file.payload);
-              },
-            })),
+            items:
+              files.length > 0
+                ? files.slice(0, 5).map((file) => ({
+                    name: `${file.name}.img`,
+                    onClick: () => {
+                      window.pixel.clear();
+                      window.pixel.import(file.payload);
+                    },
+                  }))
+                : [
+                    {
+                      name: "No files",
+                      onClick: () => {},
+                      disabled: true,
+                    },
+                  ],
           },
           {
             name: "Save",

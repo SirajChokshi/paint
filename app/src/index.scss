@@ -15,10 +15,6 @@
   -webkit-text-size-adjust: 100%;
 }
 
-* {
-  user-select: none;
-}
-
 #root {
   font-size: 18px;
   display: contents;
@@ -37,11 +33,26 @@
   --gray-0: #ffffff;
 }
 
+* {
+  user-select: none;
+  box-sizing: border-box;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  height: 100vh;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   display: grid;
   
-  height: 100vh;
+  height: 100%;
 
   grid-template-columns: 1fr;
   grid-template-rows: min-content 1fr;
