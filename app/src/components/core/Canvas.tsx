@@ -27,9 +27,14 @@ export default function PixelCanvasRenderer() {
     if (!ctx) return;
 
     // TODO make this responsive
+    const maxWidthFromWidth = window.innerWidth - 175;
+    const maxWidthFromHeight = (window.innerHeight * 0.85 * 3) / 2;
+
+    const maxWidth = Math.min(maxWidthFromWidth, maxWidthFromHeight);
+
     // canvas is 60% of the window width w/ 3:2 aspect ratio
-    canvasRef.current.width = window.innerWidth * 0.85;
-    canvasRef.current.height = (window.innerWidth * 0.85 * 2) / 3;
+    canvasRef.current.width = maxWidth;
+    canvasRef.current.height = (maxWidth * 2) / 3;
 
     const pixelArt = new PixelCanvas(ctx, {
       pixelSize: 5,
