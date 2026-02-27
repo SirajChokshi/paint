@@ -1,8 +1,11 @@
 import styled from "@emotion/styled";
+import { useEffect, useState } from "react";
+
+type DrawMode = "line" | "fill";
 
 const ToolGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr); // change to 2 columns for icons
+  grid-template-columns: repeat(2, 1fr);
   grid-template-rows: auto;
   gap: 0.25rem;
   padding: 0.25rem;
@@ -13,6 +16,11 @@ const ToolGrid = styled.div`
     background: lightgrey;
 
     &:active {
+      border: 2px inset grey;
+      filter: brightness(0.85);
+    }
+
+    &[data-active="true"] {
       border: 2px inset grey;
       filter: brightness(0.85);
     }
@@ -38,18 +46,51 @@ const COLORS = [
 ];
 
 export default function Tools() {
+  const [mode, setMode] = useState<DrawMode>(window.mode ?? "line");
+
+  useEffect(() => {
+    window.mode = mode;
+  }, [mode]);
+
+  function setColor(color: string) {
+    if (!window.pixel) return;
+    window.pixel.color = color;
+  }
+
   return (
     <ToolGrid>
-      <button onClick={() => (window.pixel.color = "#000000")}>Pencil</button>
-      <button>Line</button>
-      <button>Fill</button>
-      <button onClick={() => (window.pixel.color = "#ffffff")}>Erase</button>
+      <button
+        data-active={mode === "line"}
+        onClick={() => {
+          setMode("line");
+          setColor("#000000");
+        }}
+      >
+        Pencil
+      </button>
+      <button data-active={mode === "line"} onClick={() => setMode("line")}>
+        Line
+      </button>
+      <button data-active={mode === "fill"} onClick={() => setMode("fill")}>
+        Fill
+      </button>
+      <button
+        data-active={mode === "line"}
+        onClick={() => {
+          setMode("line");
+          setColor("#ffffff");
+        }}
+      >
+        Erase
+      </button>
       {COLORS.map((color) => (
         <button
           key={color}
           className="color"
           style={{ background: color }}
-          onClick={() => (window.pixel.color = color)}
+          aria-label={`Set drawing color to ${color}`}
+          title={color}
+          onClick={() => setColor(color)}
         ></button>
       ))}
     </ToolGrid>

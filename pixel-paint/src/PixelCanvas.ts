@@ -1,4 +1,4 @@
-import { getClosestColor, rgbFromHex } from "./color.util";
+import { rgbFromHex } from "./color.util";
 
 export class PixelCanvas {
   cursor: {
@@ -72,6 +72,10 @@ export class PixelCanvas {
   }
 
   setPixel(x: number, y: number) {
+    if (x < 0 || x >= this.image.width || y < 0 || y >= this.image.height) {
+      return;
+    }
+
     const idx = (y * this.image.width + x) | 0;
     this.data[idx] = 0xff000000 | parseInt(this.color.slice(1), 16);
   }
@@ -98,17 +102,14 @@ export class PixelCanvas {
     let er = dx + dy;
 
     while (true) {
-      if (x1 >= 0 && x1 <= width && y1 >= 0 && y1 <= height) {
-        // if within bounds, draw
+      if (x1 >= 0 && x1 < width && y1 >= 0 && y1 < height) {
         this.setPixel(x1, y1);
       }
 
       if (x1 === x2 && y1 === y2) {
-        // if at the end, stop
         break;
       }
 
-      // get next position
       e2 = 2 * er;
       if (e2 > dy) {
         er += dy;
@@ -125,39 +126,67 @@ export class PixelCanvas {
   }
 
   fill(x1: number, y1: number) {
-    const x = (x1 / this.pixelSize) | 0;
-    const y = (y1 / this.pixelSize) | 0;
+    const width = this.renderer.canvas.width;
+    const height = this.renderer.canvas.height;
+    if (width <= 0 || height <= 0) return;
 
-    const data = this.data;
-    const width = this.image.width;
-    const height = this.image.height;
-    const targetColor = data[(y * width + x) | 0];
+    const x = Math.max(0, Math.min(width - 1, x1 | 0));
+    const y = Math.max(0, Math.min(height - 1, y1 | 0));
 
-    const seen = new Set();
-    const queue: { x: number; y: number }[] = [{ x, y }];
+    const image = this.renderer.getImageData(0, 0, width, height);
+    const data = image.data;
+    const startIdx = (y * width + x) * 4;
+    const targetR = data[startIdx];
+    const targetG = data[startIdx + 1];
+    const targetB = data[startIdx + 2];
+    const targetA = data[startIdx + 3];
 
-    const enqueue = ({ x, y }: { x: number; y: number }) => {
-      const idx = (y * width + x) | 0;
-      if (seen.has(idx)) return;
-      seen.add(idx);
-      queue.push({ x, y });
-    };
-
-    this.beginPath();
-
-    while (queue.length) {
-      const { x, y } = queue.pop()!;
-      if (x < 0 || x >= width || y < 0 || y >= height) continue;
-      const idx = (y * width + x) | 0;
-      if (data[idx] !== targetColor) continue;
-      data[idx] = 0xff000000 | parseInt(this.color.slice(1), 16);
-      enqueue({ x: x - 1, y });
-      enqueue({ x: x + 1, y });
-      enqueue({ x, y: y - 1 });
-      enqueue({ x, y: y + 1 });
+    const fillColor = rgbFromHex(this.color);
+    if (
+      targetR === fillColor.r &&
+      targetG === fillColor.g &&
+      targetB === fillColor.b &&
+      targetA === 255
+    ) {
+      return;
     }
 
-    this.stroke();
+    const visited = new Uint8Array(width * height);
+    const queue: { x: number; y: number }[] = [{ x, y }];
+
+    while (queue.length) {
+      const point = queue.pop();
+      if (!point) break;
+
+      const { x, y } = point;
+      if (x < 0 || x >= width || y < 0 || y >= height) continue;
+
+      const pixelIdx = y * width + x;
+      if (visited[pixelIdx] === 1) continue;
+      visited[pixelIdx] = 1;
+
+      const idx = pixelIdx * 4;
+      if (
+        data[idx] !== targetR ||
+        data[idx + 1] !== targetG ||
+        data[idx + 2] !== targetB ||
+        data[idx + 3] !== targetA
+      ) {
+        continue;
+      }
+
+      data[idx] = fillColor.r;
+      data[idx + 1] = fillColor.g;
+      data[idx + 2] = fillColor.b;
+      data[idx + 3] = 255;
+
+      queue.push({ x: x - 1, y });
+      queue.push({ x: x + 1, y });
+      queue.push({ x, y: y - 1 });
+      queue.push({ x, y: y + 1 });
+    }
+
+    this.renderer.putImageData(image, 0, 0);
   }
 
   clear() {

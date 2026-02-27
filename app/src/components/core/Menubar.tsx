@@ -91,9 +91,8 @@ export default function Menubar() {
           {
             name: "Save",
             onClick: () => {
-              const name = window.prompt("Save as:");
-
-              if (name === null) {
+              const name = window.prompt("Save as:")?.trim();
+              if (!name) {
                 return;
               }
 
