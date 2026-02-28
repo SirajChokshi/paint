@@ -2,6 +2,9 @@
   "name": "pixel-paint",
   "version": "1.0.0",
   "description": "",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "module": "./dist/index.mjs",
@@ -14,6 +17,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "tsup": "^6.7.0"
+    "tsup": "^8.5.1"
   }
 }
