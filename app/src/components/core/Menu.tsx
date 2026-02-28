@@ -46,7 +46,7 @@ interface MenuProps extends PropsWithChildren {
   // menu actions cannot be overloaded
   actions: MenuItem[];
   isSubMenu?: boolean;
-  side?: DropdownMenu.MenuContentProps["side"];
+  side?: DropdownMenu.MenubarContentProps["side"];
 }
 
 export function Menu(props: MenuProps) {
