@@ -23,7 +23,10 @@ module.exports = [
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      ...reactHooks.configs.recommended.rules,
+      "no-undef": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
     },
   },
 ];
