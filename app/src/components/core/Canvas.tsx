@@ -11,30 +11,45 @@ const StyledCanvas = styled.canvas`
   cursor: crosshair;
 `;
 
-(window as any).mode = "line";
+interface Point {
+  x: number;
+  y: number;
+}
+
+function getCanvasPoint(canvas: HTMLCanvasElement, clientX: number, clientY: number): Point {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
+  };
+}
 
 export default function PixelCanvasRenderer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
-  const points = useRef<{ x: number; y: number }[]>([]);
+  const points = useRef<Point[]>([]);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const ctx = canvasRef.current.getContext("2d");
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // TODO make this responsive
+    if (window.mode === undefined) {
+      window.mode = "line";
+    }
+
     const maxWidthFromWidth = window.innerWidth - 175;
     const maxWidthFromHeight = (window.innerHeight * 0.85 * 3) / 2;
-
-    const maxWidth = Math.min(maxWidthFromWidth, maxWidthFromHeight);
-
-    // canvas is 60% of the window width w/ 3:2 aspect ratio
-    canvasRef.current.width = maxWidth;
-    canvasRef.current.height = (maxWidth * 2) / 3;
+    const maxWidth = Math.max(100, Math.floor(Math.min(maxWidthFromWidth, maxWidthFromHeight)));
+    canvas.width = maxWidth;
+    canvas.height = Math.floor((maxWidth * 2) / 3);
 
     const pixelArt = new PixelCanvas(ctx, {
       pixelSize: 5,
@@ -42,74 +57,60 @@ export default function PixelCanvasRenderer() {
 
     setPa(pixelArt);
     window.pixel = pixelArt;
-
-    function draw(w: number, h: number, pa: PixelCanvas) {
-      pa.ctx.clearRect(0, 0, w, h);
-
-      if (isDrawing.current) {
-        if ((window as any).mode === "line") {
-          if (points.current.length > 1) {
-            pa.beginPath();
-            const lastPoint = points.current[points.current.length - 1];
-            const secondLastPoint = points.current[points.current.length - 2];
-            pa.moveTo(secondLastPoint.x, secondLastPoint.y);
-            pa.lineTo(lastPoint.x, lastPoint.y);
-            pa.stroke();
-          }
-        } else if ((window as any).mode === "fill") {
-          pa.fill(points.current[0].x, points.current[0].y);
-        }
-      }
-      requestAnimationFrame(() => draw(w, h, pa));
-    }
-
-    draw(canvasRef.current.width, canvasRef.current.height, pixelArt);
   }, []);
+
+  function stopDrawing() {
+    isDrawing.current = false;
+    points.current.length = 0;
+  }
+
+  function drawSegment(from: Point, to: Point) {
+    if (!pa) return;
+
+    pa.beginPath();
+    pa.moveTo(from.x, from.y);
+    pa.lineTo(to.x, to.y);
+    pa.stroke();
+  }
 
   return (
     <StyledCanvas
       ref={canvasRef}
       onMouseDown={(e) => {
-        if (!canvasRef.current) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
         if (!pa) return;
 
+        const point = getCanvasPoint(canvas, e.clientX, e.clientY);
+
+        if (window.mode === "fill") {
+          pa.fill(point.x, point.y);
+          stopDrawing();
+          return;
+        }
+
         isDrawing.current = true;
-
-        // pa.color = color
-
-        const rect = canvasRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        points.current.push({
-          x,
-          y,
-        });
+        points.current = [point];
+        drawSegment(point, point);
       }}
-      onMouseUp={() => {
-        isDrawing.current = false;
-
-        points.current.length = 0;
-      }}
-      onMouseLeave={() => {
-        isDrawing.current = false;
-
-        points.current.length = 0;
-      }}
-      onContextMenu={() => {
-        isDrawing.current = false;
-
-        points.current.length = 0;
+      onMouseUp={stopDrawing}
+      onMouseLeave={stopDrawing}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        stopDrawing();
       }}
       onMouseMove={(e) => {
-        if (!canvasRef.current) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        if (!pa) return;
         if (!isDrawing.current) return;
 
-        const rect = canvasRef.current.getBoundingClientRect();
-        points.current.push({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
+        const point = getCanvasPoint(canvas, e.clientX, e.clientY);
+        const previousPoint = points.current[points.current.length - 1];
+        if (!previousPoint) return;
+
+        points.current.push(point);
+        drawSegment(previousPoint, point);
       }}
     />
   );

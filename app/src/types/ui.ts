@@ -3,13 +3,13 @@ export interface SubMenu {
   items: MenuItem[];
 }
 
-export interface Action<T> {
+export interface Action {
   name: string;
-  onClick: (args: T) => void;
+  onClick: () => void;
   disabled?: boolean;
 }
 
-export type MenuItem = SubMenu | Action<any>;
+export type MenuItem = SubMenu | Action;
 
 export const isSubMenu = (item: MenuItem): item is SubMenu => {
   return (item as SubMenu).items !== undefined;

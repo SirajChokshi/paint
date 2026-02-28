@@ -71,6 +71,8 @@ export default function Window({
 
   const { getWindow, addWindow, removeWindow, touchWindow, getStackOrder } =
     useWindowStore();
+  const initialX = defaultPosition?.x ?? 0;
+  const initialY = defaultPosition?.y ?? 0;
 
   const maybeWindow = getWindow(id.current);
 
@@ -79,12 +81,12 @@ export default function Window({
 
     const windowId = id.current;
 
-    addWindow({ id: windowId, position: defaultPosition ?? { x: 0, y: 0 } });
+    addWindow({ id: windowId, position: { x: initialX, y: initialY } });
 
     return () => {
       removeWindow(windowId);
     };
-  }, [addWindow, removeWindow, controlledId]);
+  }, [addWindow, removeWindow, initialX, initialY, startClosed]);
 
   if (!maybeWindow) return null;
 

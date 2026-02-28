@@ -46,7 +46,7 @@ interface MenuProps extends PropsWithChildren {
   // menu actions cannot be overloaded
   actions: MenuItem[];
   isSubMenu?: boolean;
-  side?: DropdownMenu.MenuContentProps["side"];
+  side?: DropdownMenu.MenubarContentProps["side"];
 }
 
 export function Menu(props: MenuProps) {
@@ -81,7 +81,7 @@ export function Menu(props: MenuProps) {
               <DropdownMenu.Item
                 disabled={action.disabled === true}
                 key={action.name}
-                onSelect={action.onClick}
+                onSelect={() => action.onClick()}
                 asChild
               >
                 <button>{action.name}</button>
