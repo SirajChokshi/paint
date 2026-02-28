@@ -81,7 +81,7 @@ export function Menu(props: MenuProps) {
               <DropdownMenu.Item
                 disabled={action.disabled === true}
                 key={action.name}
-                onSelect={action.onClick}
+                onSelect={() => action.onClick()}
                 asChild
               >
                 <button>{action.name}</button>
