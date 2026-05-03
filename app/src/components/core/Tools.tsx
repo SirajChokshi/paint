@@ -34,11 +34,18 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
   line-height: 1;
   border-right: 1px solid var(--mac-black);
   border-bottom: 1px solid var(--mac-black);
+  color: var(--mac-black);
+  position: relative;
 
-  background: ${({ isActive }) =>
-    isActive ? "var(--mac-black)" : "var(--mac-white)"};
-  color: ${({ isActive }) =>
-    isActive ? "var(--mac-white)" : "var(--mac-black)"};
+  background: ${({ isActive }) => (isActive ? "#e0e0e0" : "var(--mac-white)")};
+
+  /* Selected indicator: inner border */
+  ${({ isActive }) =>
+    isActive
+      ? `
+    box-shadow: inset 0 0 0 2px var(--mac-black);
+  `
+      : ""}
 
   &:nth-of-type(2n) {
     border-right: none;
@@ -49,8 +56,8 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
   }
 
   &:active {
-    background: var(--mac-black);
-    color: var(--mac-white);
+    background: #d0d0d0;
+    box-shadow: inset 0 0 0 2px var(--mac-black);
   }
 `;
 
