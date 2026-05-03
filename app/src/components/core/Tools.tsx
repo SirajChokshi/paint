@@ -7,63 +7,169 @@ const ToolGrid = styled.div`
   display: flex;
   flex-direction: column;
   background: var(--mac-white);
-  padding: 0;
+  border-bottom: 1px solid var(--mac-black);
 `;
 
 const ToolSection = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0;
-  padding: 0;
+  grid-template-columns: 1fr 1fr;
   background: var(--mac-white);
-  border-bottom: 1px solid var(--mac-black);
 `;
 
 const ToolButton = styled.button<{ isActive?: boolean }>`
   all: unset;
   box-sizing: border-box;
-  width: 48px;
-  height: 40px;
+  width: 52px;
+  height: 44px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-family: var(--chicago);
-  font-size: 10px;
   cursor: default;
-  text-align: center;
-  line-height: 1;
+  position: relative;
+  gap: 3px;
   border-right: 1px solid var(--mac-black);
   border-bottom: 1px solid var(--mac-black);
-  color: var(--mac-black);
-  position: relative;
-
-  background: ${({ isActive }) => (isActive ? "#e0e0e0" : "var(--mac-white)")};
-
-  /* Selected indicator: inner border */
-  ${({ isActive }) =>
-    isActive
-      ? `
-    box-shadow: inset 0 0 0 2px var(--mac-black);
-  `
-      : ""}
 
   &:nth-of-type(2n) {
     border-right: none;
   }
-
   &:nth-of-type(n + 3) {
     border-bottom: none;
   }
 
+  /* Dithered checkerboard pattern for selected state */
+  background: ${({ isActive }) =>
+    isActive
+      ? `url("data:image/svg+xml,%3Csvg width='2' height='2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23000'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23000'/%3E%3C/svg%3E")`
+      : "var(--mac-white)"};
+  background-size: 2px 2px;
+  image-rendering: pixelated;
+
+  color: var(--mac-black);
+
   &:active {
-    background: #d0d0d0;
-    box-shadow: inset 0 0 0 2px var(--mac-black);
+    background: var(--mac-black);
+    color: var(--mac-white);
   }
 `;
 
-const Divider = styled.div`
-  height: 0;
+const ToolIcon = styled.div`
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  image-rendering: pixelated;
 `;
+
+const ToolLabel = styled.span`
+  font-family: var(--chicago);
+  font-size: 9px;
+  line-height: 1;
+`;
+
+const PencilIcon = () => (
+  <ToolIcon>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      shapeRendering="crispEdges"
+    >
+      <rect x="12" y="1" width="1" height="1" fill="black" />
+      <rect x="11" y="2" width="1" height="1" fill="black" />
+      <rect x="10" y="3" width="1" height="1" fill="black" />
+      <rect x="9" y="4" width="1" height="1" fill="black" />
+      <rect x="8" y="5" width="1" height="1" fill="black" />
+      <rect x="7" y="6" width="1" height="1" fill="black" />
+      <rect x="6" y="7" width="1" height="1" fill="black" />
+      <rect x="5" y="8" width="1" height="1" fill="black" />
+      <rect x="4" y="9" width="1" height="1" fill="black" />
+      <rect x="3" y="10" width="1" height="1" fill="black" />
+      <rect x="2" y="11" width="2" height="1" fill="black" />
+      <rect x="1" y="12" width="2" height="1" fill="black" />
+      <rect x="1" y="13" width="1" height="1" fill="black" />
+      <rect x="13" y="1" width="1" height="2" fill="black" />
+      <rect x="12" y="2" width="1" height="2" fill="black" />
+      <rect x="11" y="3" width="1" height="2" fill="black" />
+      <rect x="10" y="4" width="1" height="2" fill="black" />
+      <rect x="9" y="5" width="1" height="2" fill="black" />
+      <rect x="8" y="6" width="1" height="2" fill="black" />
+      <rect x="7" y="7" width="1" height="2" fill="black" />
+      <rect x="6" y="8" width="1" height="2" fill="black" />
+      <rect x="5" y="9" width="1" height="2" fill="black" />
+      <rect x="4" y="10" width="1" height="1" fill="black" />
+    </svg>
+  </ToolIcon>
+);
+
+const LineIcon = () => (
+  <ToolIcon>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      shapeRendering="crispEdges"
+    >
+      <rect x="2" y="13" width="2" height="2" fill="black" />
+      <rect x="4" y="11" width="2" height="2" fill="black" />
+      <rect x="6" y="9" width="2" height="2" fill="black" />
+      <rect x="8" y="7" width="2" height="2" fill="black" />
+      <rect x="10" y="5" width="2" height="2" fill="black" />
+      <rect x="12" y="3" width="2" height="2" fill="black" />
+    </svg>
+  </ToolIcon>
+);
+
+const FillIcon = () => (
+  <ToolIcon>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      shapeRendering="crispEdges"
+    >
+      <rect x="7" y="1" width="1" height="1" fill="black" />
+      <rect x="6" y="2" width="1" height="1" fill="black" />
+      <rect x="5" y="3" width="1" height="2" fill="black" />
+      <rect x="4" y="5" width="1" height="2" fill="black" />
+      <rect x="3" y="7" width="1" height="2" fill="black" />
+      <rect x="4" y="9" width="1" height="1" fill="black" />
+      <rect x="5" y="10" width="1" height="1" fill="black" />
+      <rect x="6" y="11" width="3" height="1" fill="black" />
+      <rect x="9" y="10" width="1" height="1" fill="black" />
+      <rect x="10" y="9" width="1" height="1" fill="black" />
+      <rect x="11" y="7" width="1" height="2" fill="black" />
+      <rect x="10" y="5" width="1" height="2" fill="black" />
+      <rect x="9" y="3" width="1" height="2" fill="black" />
+      <rect x="8" y="2" width="1" height="1" fill="black" />
+      {/* drip */}
+      <rect x="7" y="12" width="1" height="1" fill="black" />
+      <rect x="7" y="13" width="1" height="1" fill="black" />
+      <rect x="7" y="14" width="1" height="1" fill="black" />
+    </svg>
+  </ToolIcon>
+);
+
+const EraseIcon = () => (
+  <ToolIcon>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      shapeRendering="crispEdges"
+    >
+      <rect x="2" y="6" width="12" height="6" fill="black" />
+      <rect x="3" y="7" width="10" height="4" fill="white" />
+      <rect x="2" y="12" width="12" height="1" fill="black" />
+    </svg>
+  </ToolIcon>
+);
 
 const FgBgSection = styled.div`
   display: flex;
@@ -102,7 +208,10 @@ const FgBox = styled.div<{ color: string }>`
   z-index: 2;
 `;
 
-const ColorSwatch = styled.button<{ swatchColor: string; isSelected?: boolean }>`
+const ColorSwatch = styled.button<{
+  swatchColor: string;
+  isSelected?: boolean;
+}>`
   all: unset;
   box-sizing: border-box;
   width: 18px;
@@ -178,21 +287,24 @@ export default function Tools() {
           }}
           title="Pencil"
         >
-          Pencil
+          <PencilIcon />
+          <ToolLabel>Pencil</ToolLabel>
         </ToolButton>
         <ToolButton
           isActive={mode === "line"}
           onClick={() => setMode("line")}
           title="Line"
         >
-          Line
+          <LineIcon />
+          <ToolLabel>Line</ToolLabel>
         </ToolButton>
         <ToolButton
           isActive={mode === "fill"}
           onClick={() => setMode("fill")}
           title="Fill"
         >
-          Fill
+          <FillIcon />
+          <ToolLabel>Fill</ToolLabel>
         </ToolButton>
         <ToolButton
           isActive={mode === "line"}
@@ -202,17 +314,16 @@ export default function Tools() {
           }}
           title="Eraser"
         >
-          Erase
+          <EraseIcon />
+          <ToolLabel>Erase</ToolLabel>
         </ToolButton>
       </ToolSection>
-      <Divider />
       <FgBgSection>
         <FgBgPreview>
           <FgBox color={currentColor} />
           <BgBox />
         </FgBgPreview>
       </FgBgSection>
-      <Divider />
       <ColorGrid>
         {COLORS.map((color) => (
           <ColorSwatch
