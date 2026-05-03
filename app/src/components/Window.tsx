@@ -16,7 +16,9 @@ const WindowWrapper = styled.div<{
   width: min-content;
   z-index: ${({ z }) => z};
 
-  border: 1px solid var(--mac-black);
+  /* System 7 window: 1px black outer + 1px white inner + 1px black inner */
+  outline: 1px solid var(--mac-black);
+  border: 2px solid var(--mac-white);
   box-shadow: 1px 1px 0 var(--mac-black);
   overflow: hidden;
 
@@ -29,7 +31,7 @@ const WindowWrapper = styled.div<{
   ${({ allDraggable }) => (allDraggable ? "cursor: grab;" : "")}
 
   .window__titlebar {
-    height: 20px;
+    height: 19px;
     user-select: none;
     cursor: grab;
     display: flex;
@@ -43,11 +45,11 @@ const WindowWrapper = styled.div<{
   .window__close-box {
     all: unset;
     box-sizing: border-box;
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 11px;
     border: 1px solid var(--mac-black);
     background: var(--mac-white);
-    margin: 0 4px;
+    margin: 0 3px 0 3px;
     flex-shrink: 0;
     cursor: default;
     position: relative;
@@ -61,7 +63,7 @@ const WindowWrapper = styled.div<{
   .window__title-text {
     font-family: var(--chicago);
     font-size: 12px;
-    line-height: 20px;
+    line-height: 19px;
     text-align: center;
     white-space: nowrap;
     padding: 0 6px;
@@ -73,7 +75,7 @@ const WindowWrapper = styled.div<{
   .window__stripes {
     position: absolute;
     top: 0;
-    left: 20px;
+    left: 21px;
     right: 0;
     bottom: 0;
     z-index: 1;
@@ -84,12 +86,14 @@ const WindowWrapper = styled.div<{
 
   .window__stripes-inner {
     width: 100%;
-    height: 12px;
+    height: 13px;
     background: repeating-linear-gradient(
       to bottom,
-      var(--mac-black) 0px,
-      var(--mac-black) 1px,
+      var(--mac-white) 0px,
       var(--mac-white) 1px,
+      var(--mac-black) 1px,
+      var(--mac-black) 2px,
+      var(--mac-white) 2px,
       var(--mac-white) 3px
     );
   }
@@ -97,6 +101,31 @@ const WindowWrapper = styled.div<{
   .window__body {
     background: var(--mac-white);
     position: relative;
+  }
+
+  .window__resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    cursor: se-resize;
+    z-index: 3;
+    border-top: 1px solid var(--mac-black);
+    border-left: 1px solid var(--mac-black);
+    background: var(--mac-white);
+    box-sizing: border-box;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 6px;
+      height: 6px;
+      border-right: 2px solid var(--mac-black);
+      border-bottom: 2px solid var(--mac-black);
+    }
   }
 `;
 
@@ -185,7 +214,10 @@ export default function Window({
         </div>
       ) : null}
 
-      <div className="window__body">{children}</div>
+      <div className="window__body">
+        {children}
+        <div className="window__resize-handle" />
+      </div>
     </WindowWrapper>
   );
 }

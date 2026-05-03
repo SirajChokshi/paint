@@ -11,12 +11,13 @@ const MenubarWrapper = styled(Toolbar.Root)`
   justify-content: flex-start;
 
   background-color: var(--mac-white);
-  border-bottom: 1px solid var(--mac-black);
-  height: 20px;
+  border-bottom: 2px solid var(--mac-black);
+  height: 21px;
   width: 100%;
   z-index: 9999;
   font-family: var(--chicago);
   font-size: 12px;
+  box-shadow: 0 1px 0 var(--mac-white);
 
   button {
     all: unset;
@@ -26,6 +27,7 @@ const MenubarWrapper = styled(Toolbar.Root)`
     font-size: 12px;
     line-height: 19px;
     height: 19px;
+
     &:hover,
     &[aria-expanded="true"] {
       background-color: var(--mac-black);

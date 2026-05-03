@@ -29,7 +29,6 @@ const Inner = styled.div`
   h2 {
     font-family: var(--chicago);
     font-size: 12px;
-    font-weight: bold;
     margin: 8px 0 4px;
   }
 
@@ -45,7 +44,7 @@ const Inner = styled.div`
     font-size: 10px;
     text-align: center;
     line-height: 1.3;
-    border-top: 1px solid var(--mac-dark-gray);
+    border-top: 1px solid var(--mac-black);
   }
 
   a {
@@ -66,25 +65,23 @@ const MacButton = styled.button`
   all: unset;
   box-sizing: border-box;
   display: block;
-  width: 90px;
-  height: 24px;
+  width: 80px;
+  height: 20px;
   margin: 6px auto 0;
   text-align: center;
-  line-height: 20px;
+  line-height: 18px;
   font-family: var(--chicago);
   font-size: 12px;
-  font-weight: bold;
   cursor: default;
 
-  /* Classic Mac default button: thick rounded border with double ring */
   background: var(--mac-white);
   color: var(--mac-black);
-  border: 3px solid var(--mac-black);
-  border-radius: 10px;
+  border: 2px solid var(--mac-black);
+  border-radius: 6px;
 
-  &:hover {
-    background: var(--mac-lightest);
-  }
+  /* Default button double-border ring */
+  outline: 1px solid var(--mac-black);
+  outline-offset: 1px;
 
   &:active {
     background: var(--mac-black);

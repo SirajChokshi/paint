@@ -8,38 +8,37 @@ const ToolGrid = styled.div`
   flex-direction: column;
   background: var(--mac-white);
   padding: 0;
-  width: 106px;
+  width: 100px;
 `;
 
 const ToolSection = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0;
-  padding: 4px;
+  padding: 3px;
   background: var(--mac-white);
 `;
 
 const ToolButton = styled.button<{ isActive?: boolean }>`
   all: unset;
   box-sizing: border-box;
-  width: 46px;
-  height: 34px;
+  width: 44px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--chicago);
-  font-size: 10px;
+  font-size: 9px;
   cursor: default;
   text-align: center;
   line-height: 1;
+  margin: 1px;
 
   background: ${({ isActive }) =>
     isActive ? "var(--mac-black)" : "var(--mac-white)"};
   color: ${({ isActive }) =>
     isActive ? "var(--mac-white)" : "var(--mac-black)"};
-
   border: 1px solid var(--mac-black);
-  margin: 1px;
 
   &:active {
     background: var(--mac-black);
@@ -50,7 +49,6 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
 const Divider = styled.div`
   height: 1px;
   background: var(--mac-black);
-  margin: 0;
 `;
 
 const ColorSwatch = styled.button<{ swatchColor: string }>`
@@ -63,7 +61,8 @@ const ColorSwatch = styled.button<{ swatchColor: string }>`
   border: 1px solid var(--mac-black);
 
   &:active {
-    border: 2px solid var(--mac-white);
+    border-color: var(--mac-white);
+    outline: 1px solid var(--mac-black);
   }
 `;
 
@@ -71,10 +70,38 @@ const ColorGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(5, 16px);
   gap: 1px;
-  padding: 6px;
+  padding: 5px;
   justify-content: center;
-  align-items: center;
   background: var(--mac-white);
+`;
+
+const FgBgPreview = styled.div`
+  position: relative;
+  width: 28px;
+  height: 28px;
+  margin: 4px auto;
+`;
+
+const FgBox = styled.div<{ color: string }>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  background: ${({ color }) => color};
+  border: 1px solid var(--mac-black);
+  z-index: 2;
+`;
+
+const BgBox = styled.div`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  background: var(--mac-white);
+  border: 1px solid var(--mac-black);
+  z-index: 1;
 `;
 
 const COLORS = [
@@ -97,6 +124,7 @@ const COLORS = [
 
 export default function Tools() {
   const [mode, setMode] = useState<DrawMode>(window.mode ?? "line");
+  const [currentColor, setCurrentColor] = useState("#000000");
 
   useEffect(() => {
     window.mode = mode;
@@ -105,6 +133,7 @@ export default function Tools() {
   function setColor(color: string) {
     if (!window.pixel) return;
     window.pixel.color = color;
+    setCurrentColor(color);
   }
 
   return (
@@ -145,6 +174,11 @@ export default function Tools() {
           Erase
         </ToolButton>
       </ToolSection>
+      <Divider />
+      <FgBgPreview>
+        <FgBox color={currentColor} />
+        <BgBox />
+      </FgBgPreview>
       <Divider />
       <ColorGrid>
         {COLORS.map((color) => (
