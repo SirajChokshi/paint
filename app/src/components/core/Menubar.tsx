@@ -4,6 +4,7 @@ import { useFileStore } from "../../stores/fileStore";
 import { FrameBus } from "../../lib/frame";
 import { Menu } from "./Menu";
 import { useWindowStore } from "../../stores/windowStore";
+import { WINDOW_IDS } from "../../App";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   display: flex;
@@ -37,7 +38,7 @@ const MenubarWrapper = styled(Toolbar.Root)`
 `;
 
 export default function Menubar() {
-  const { addWindow } = useWindowStore();
+  const { addWindow, getWindow } = useWindowStore();
   const { save, files } = useFileStore();
 
   return (
@@ -48,7 +49,7 @@ export default function Menubar() {
             name: "About Pixel Paint",
             onClick: () => {
               addWindow({
-                id: "about",
+                id: WINDOW_IDS.about,
                 position: {
                   x: 80,
                   y: 40,
@@ -119,6 +120,34 @@ export default function Menubar() {
         ]}
       >
         <button>Edit</button>
+      </Menu>
+      <Menu
+        actions={[
+          {
+            name: getWindow(WINDOW_IDS.tools) ? "✓ Tools" : "  Tools",
+            onClick: () => {
+              if (!getWindow(WINDOW_IDS.tools)) {
+                addWindow({
+                  id: WINDOW_IDS.tools,
+                  position: { x: 15, y: 15 },
+                });
+              }
+            },
+          },
+          {
+            name: getWindow(WINDOW_IDS.canvas) ? "✓ Canvas" : "  Canvas",
+            onClick: () => {
+              if (!getWindow(WINDOW_IDS.canvas)) {
+                addWindow({
+                  id: WINDOW_IDS.canvas,
+                  position: { x: 180, y: 15 },
+                });
+              }
+            },
+          },
+        ]}
+      >
+        <button>View</button>
       </Menu>
     </MenubarWrapper>
   );
