@@ -10,35 +10,31 @@ const MenubarWrapper = styled(Toolbar.Root)`
   align-items: stretch;
   justify-content: flex-start;
 
-  background-color: var(--mac-white);
+  background-color: var(--mac-light-gray);
   border-bottom: 2px solid var(--mac-black);
-  height: 20px;
+  height: 22px;
   width: 100%;
   z-index: 9999;
   font-family: var(--chicago);
   font-size: 12px;
 
+  box-shadow: inset 0 -1px 0 var(--mac-dark-gray);
+
   button {
     all: unset;
-    padding: 0 12px;
+    padding: 0 10px;
     cursor: default;
     font-family: var(--chicago);
     font-size: 12px;
-    line-height: 18px;
-    height: 18px;
+    line-height: 20px;
+    height: 20px;
+    font-weight: bold;
 
     &:hover,
     &[aria-expanded="true"] {
       background-color: var(--mac-black);
       color: var(--mac-white);
     }
-  }
-`;
-
-const AppleMenuTrigger = styled.button`
-  && {
-    font-size: 14px;
-    padding: 0 8px;
   }
 `;
 
@@ -56,8 +52,8 @@ export default function Menubar() {
               addWindow({
                 id: "about",
                 position: {
-                  x: 10,
-                  y: 10,
+                  x: 80,
+                  y: 40,
                 },
               });
             },
@@ -72,7 +68,7 @@ export default function Menubar() {
           },
         ]}
       >
-        <AppleMenuTrigger>&#63743;</AppleMenuTrigger>
+        <button>&#63743;</button>
       </Menu>
       <Menu
         actions={[

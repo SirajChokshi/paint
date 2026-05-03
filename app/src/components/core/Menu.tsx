@@ -6,22 +6,21 @@ import styled from "@emotion/styled";
 
 const menuContentCSS = css`
   background-color: var(--mac-white);
-  border: 1px solid var(--mac-black);
+  border: 2px solid var(--mac-black);
   box-shadow: 2px 2px 0 var(--mac-black);
 
   display: flex;
   flex-direction: column;
   z-index: 9999;
-  padding: 1px 0;
-  min-width: 140px;
+  padding: 2px 0;
+  min-width: 160px;
 
   &&& button {
     all: unset;
-    padding: 0 16px 0 20px;
+    padding: 2px 24px 2px 18px;
     font-family: var(--chicago);
     font-size: 12px;
-    line-height: 18px;
-    height: 18px;
+    line-height: 16px;
     cursor: default;
     white-space: nowrap;
 
@@ -35,19 +34,8 @@ const menuContentCSS = css`
     }
 
     &[data-disabled] {
-      color: var(--mac-disabled);
+      color: var(--mac-dark-gray);
     }
-  }
-
-  &&& [data-mac-separator] {
-    height: 1px;
-    background: var(--mac-black);
-    margin: 2px 0;
-  }
-
-  &&& [data-mac-submenu-arrow] {
-    float: right;
-    margin-left: 16px;
   }
 `;
 
@@ -89,8 +77,7 @@ export function Menu(props: MenuProps) {
                   isSubMenu={true}
                 >
                   <button>
-                    {action.name}
-                    <span data-mac-submenu-arrow>&#9656;</span>
+                    {action.name} &#9656;
                   </button>
                 </Menu>
               );

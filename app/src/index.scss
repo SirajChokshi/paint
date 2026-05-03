@@ -6,7 +6,7 @@
     Georgia, serif;
 
   --redaction: "Redaction 35", var(--garamond-stack);
-  --chicago: "Chicago", "Geneva", "Helvetica Neue", Arial, sans-serif;
+  --chicago: "Chicago", "ChicagoFLF", "Geneva", system-ui, sans-serif;
 
   font-family: var(--chicago);
   line-height: 1.5;
@@ -20,22 +20,17 @@
 }
 
 #root {
-  font-size: 13px;
+  font-size: 12px;
   display: contents;
 
   --mac-black: #000000;
   --mac-white: #ffffff;
-  --mac-window-bg: #c0c0c0;
-  --mac-highlight: #000000;
-  --mac-highlight-text: #ffffff;
-  --mac-disabled: #808080;
-  --mac-shadow-dark: #555555;
-  --mac-shadow-light: #dfdfdf;
-  --mac-border: #000000;
-  --mac-titlebar-active: #000000;
-  --mac-titlebar-inactive: #a0a0a0;
-  --mac-scrollbar: #c0c0c0;
-  --mac-desktop: #6699cc;
+  --mac-gray: #c0c0c0;
+  --mac-light-gray: #dddddd;
+  --mac-dark-gray: #808080;
+  --mac-darker-gray: #555555;
+  --mac-lightest: #eeeeee;
+  --mac-desktop-blue: #5b9bd5;
 
   --gray-999: #000000;
   --gray-950: #0b0b0b;
@@ -54,6 +49,7 @@
 * {
   user-select: none;
   box-sizing: border-box;
+  image-rendering: pixelated;
 }
 
 html,
@@ -70,9 +66,7 @@ html {
 body {
   margin: 0;
   display: grid;
-
   height: 100%;
-
   grid-template-columns: 1fr;
   grid-template-rows: min-content 1fr;
 }
@@ -89,11 +83,11 @@ main {
 
   &-md {
     font-family: var(--chicago);
-    font-size: 13px;
+    font-size: 12px;
   }
 }
 
 h1 {
-  font-size: 2.4em;
+  font-size: 2em;
   line-height: 1.1;
 }

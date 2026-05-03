@@ -4,7 +4,7 @@ import { useWindowStore } from "../../stores/windowStore";
 
 const Inner = styled.div`
   width: 320px;
-  padding: 20px 16px 16px;
+  padding: 16px;
   font-family: var(--chicago);
   font-size: 12px;
   background: var(--mac-white);
@@ -21,10 +21,9 @@ const Inner = styled.div`
 
   h1 {
     font-family: var(--redaction);
-    font-size: 20px;
+    font-size: 18px;
     text-align: center;
     margin-bottom: 12px;
-    letter-spacing: 0.5px;
   }
 
   h2 {
@@ -40,13 +39,13 @@ const Inner = styled.div`
   }
 
   footer {
-    margin-top: 12px;
-    padding: 4px 0 8px;
-    color: var(--mac-disabled);
+    margin-top: 10px;
+    padding: 6px 0 8px;
+    color: var(--mac-dark-gray);
     font-size: 10px;
     text-align: center;
     line-height: 1.3;
-    border-top: 1px dotted var(--mac-disabled);
+    border-top: 1px solid var(--mac-dark-gray);
   }
 
   a {
@@ -67,9 +66,9 @@ const MacButton = styled.button`
   all: unset;
   box-sizing: border-box;
   display: block;
-  width: 80px;
-  height: 22px;
-  margin: 4px auto 0;
+  width: 90px;
+  height: 24px;
+  margin: 6px auto 0;
   text-align: center;
   line-height: 20px;
   font-family: var(--chicago);
@@ -77,14 +76,14 @@ const MacButton = styled.button`
   font-weight: bold;
   cursor: default;
 
+  /* Classic Mac default button: thick rounded border with double ring */
   background: var(--mac-white);
   color: var(--mac-black);
-  border: 2px solid var(--mac-black);
-  border-radius: 8px;
-  box-shadow: 0 0 0 1px var(--mac-black), inset 0 0 0 1px var(--mac-white);
+  border: 3px solid var(--mac-black);
+  border-radius: 10px;
 
   &:hover {
-    background: #eee;
+    background: var(--mac-lightest);
   }
 
   &:active {

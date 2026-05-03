@@ -6,27 +6,24 @@ type DrawMode = "line" | "fill";
 const ToolGrid = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0;
-  background: var(--mac-white);
+  background: var(--mac-light-gray);
+  padding: 0;
+  width: 108px;
 `;
 
 const ToolSection = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0;
-  padding: 4px;
-  border-bottom: 1px solid var(--mac-black);
-
-  &:last-child {
-    border-bottom: none;
-  }
+  gap: 2px;
+  padding: 6px;
+  background: var(--mac-light-gray);
 `;
 
 const ToolButton = styled.button<{ isActive?: boolean }>`
   all: unset;
   box-sizing: border-box;
-  width: 40px;
-  height: 32px;
+  width: 44px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -35,86 +32,90 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
   cursor: default;
   text-align: center;
   line-height: 1;
-  padding: 2px;
-
-  border: 1px solid var(--mac-black);
-  margin: 1px;
 
   background: ${({ isActive }) =>
-    isActive ? "var(--mac-black)" : "var(--mac-white)"};
+    isActive ? "var(--mac-dark-gray)" : "var(--mac-light-gray)"};
   color: ${({ isActive }) =>
     isActive ? "var(--mac-white)" : "var(--mac-black)"};
 
-  box-shadow: ${({ isActive }) =>
-    isActive
-      ? "inset 1px 1px 0 var(--mac-shadow-dark)"
-      : "inset -1px -1px 0 var(--mac-shadow-dark), inset 1px 1px 0 var(--mac-shadow-light)"};
+  /* Classic Mac 3D bevel */
+  border-top: 2px solid
+    ${({ isActive }) =>
+      isActive ? "var(--mac-darker-gray)" : "var(--mac-white)"};
+  border-left: 2px solid
+    ${({ isActive }) =>
+      isActive ? "var(--mac-darker-gray)" : "var(--mac-white)"};
+  border-bottom: 2px solid
+    ${({ isActive }) =>
+      isActive ? "var(--mac-white)" : "var(--mac-darker-gray)"};
+  border-right: 2px solid
+    ${({ isActive }) =>
+      isActive ? "var(--mac-white)" : "var(--mac-darker-gray)"};
 
   &:active {
-    background: var(--mac-black);
+    background: var(--mac-dark-gray);
     color: var(--mac-white);
-    box-shadow: inset 1px 1px 0 var(--mac-shadow-dark);
+    border-top-color: var(--mac-darker-gray);
+    border-left-color: var(--mac-darker-gray);
+    border-bottom-color: var(--mac-white);
+    border-right-color: var(--mac-white);
   }
+`;
+
+const Divider = styled.div`
+  height: 2px;
+  background: var(--mac-dark-gray);
+  margin: 0 4px;
+  box-shadow: 0 1px 0 var(--mac-white);
 `;
 
 const ColorSwatch = styled.button<{ swatchColor: string }>`
   all: unset;
   box-sizing: border-box;
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--mac-black);
+  width: 18px;
+  height: 18px;
   background: ${({ swatchColor }) => swatchColor};
   cursor: default;
-  margin: 1px;
 
-  &:hover {
-    outline: 1px solid var(--mac-white);
-    outline-offset: -2px;
-  }
+  /* Inset well */
+  border-top: 2px solid var(--mac-darker-gray);
+  border-left: 2px solid var(--mac-darker-gray);
+  border-bottom: 2px solid var(--mac-white);
+  border-right: 2px solid var(--mac-white);
 
   &:active {
-    outline: 2px solid var(--mac-white);
-    outline-offset: -3px;
+    border-top-color: var(--mac-white);
+    border-left-color: var(--mac-white);
+    border-bottom-color: var(--mac-darker-gray);
+    border-right-color: var(--mac-darker-gray);
   }
 `;
 
 const ColorGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0;
-  padding: 4px;
-  justify-items: center;
-  align-items: center;
-`;
-
-const SectionLabel = styled.div`
-  grid-column: 1 / -1;
-  font-family: var(--chicago);
-  font-size: 9px;
-  text-align: center;
-  padding: 2px 0 1px;
-  color: var(--mac-black);
-  border-bottom: 1px dotted var(--mac-disabled);
-  margin-bottom: 2px;
-  width: 100%;
+  grid-template-columns: repeat(5, 18px);
+  gap: 2px;
+  padding: 6px;
+  justify-content: center;
+  background: var(--mac-light-gray);
 `;
 
 const COLORS = [
   "#000000",
-  "#848284",
-  "#c6c3c6",
-  "#fffbff",
+  "#808080",
+  "#c0c0c0",
+  "#ffffff",
   "#ff0000",
   "#ff8200",
-  "#fffb00",
-  "#00fb00",
-  "#008242",
-  "#00fbff",
+  "#ffff00",
+  "#00ff00",
+  "#008040",
+  "#00ffff",
   "#0000ff",
-  "#c600c6",
-  "#c64121",
-  "#846100",
-  "#ffc384",
+  "#c000c0",
+  "#c04020",
+  "#806000",
+  "#ffc080",
 ];
 
 export default function Tools() {
@@ -140,21 +141,21 @@ export default function Tools() {
           }}
           title="Pencil"
         >
-          ✏️
+          Pencil
         </ToolButton>
         <ToolButton
           isActive={mode === "line"}
           onClick={() => setMode("line")}
           title="Line"
         >
-          ╱
+          Line
         </ToolButton>
         <ToolButton
           isActive={mode === "fill"}
           onClick={() => setMode("fill")}
           title="Fill"
         >
-          🪣
+          Fill
         </ToolButton>
         <ToolButton
           isActive={mode === "line"}
@@ -164,11 +165,11 @@ export default function Tools() {
           }}
           title="Eraser"
         >
-          ▯
+          Erase
         </ToolButton>
       </ToolSection>
+      <Divider />
       <ColorGrid>
-        <SectionLabel>Colors</SectionLabel>
         {COLORS.map((color) => (
           <ColorSwatch
             key={color}

@@ -13,17 +13,17 @@ const WindowWrapper = styled.div<{
   position: absolute;
   top: ${({ top }) => top}px;
   left: ${({ left }) => left}px;
-
   width: min-content;
-
   z-index: ${({ z }) => z};
 
-  background: var(--mac-white);
-  color: var(--mac-black);
+  /* Outer black border */
   border: 2px solid var(--mac-black);
-  border-radius: 0;
+  border-radius: 4px 4px 0 0;
   box-shadow: 1px 1px 0 var(--mac-black);
-  overflow: visible;
+  overflow: hidden;
+
+  /* 3D raised bezel inside */
+  background: var(--mac-light-gray);
 
   display: grid;
   grid-template-columns: 1fr;
@@ -32,35 +32,29 @@ const WindowWrapper = styled.div<{
   ${({ allDraggable }) => (allDraggable ? "cursor: grab;" : "")}
 
   .window__titlebar {
-    height: 20px;
-    padding: 0;
+    height: 22px;
     user-select: none;
-    border-bottom: 2px solid var(--mac-black);
     cursor: grab;
     display: flex;
     align-items: center;
     position: relative;
-    background: var(--mac-white);
-    overflow: hidden;
+    background: var(--mac-light-gray);
+    padding: 0;
+    border-bottom: 2px solid var(--mac-black);
   }
 
   .window__close-box {
-    width: 13px;
-    height: 13px;
-    border: 1px solid var(--mac-black);
+    all: unset;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--mac-black);
     background: var(--mac-white);
-    margin: 0 4px;
+    margin: 0 3px 0 4px;
     flex-shrink: 0;
-    cursor: pointer;
+    cursor: default;
     position: relative;
     z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    outline: none;
-    font-size: 0;
-    line-height: 0;
+    box-sizing: border-box;
 
     &:active {
       background: var(--mac-black);
@@ -71,42 +65,42 @@ const WindowWrapper = styled.div<{
     font-family: var(--chicago);
     font-size: 12px;
     font-weight: bold;
-    line-height: 20px;
+    line-height: 22px;
     text-align: center;
     white-space: nowrap;
     padding: 0 8px;
     z-index: 2;
     position: relative;
-    background: var(--mac-white);
+    background: var(--mac-light-gray);
   }
 
   .window__stripes {
     position: absolute;
     top: 0;
-    left: 0;
+    left: 22px;
     right: 0;
     bottom: 0;
     z-index: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .window__stripes-inner {
+    width: 100%;
+    height: 14px;
     background: repeating-linear-gradient(
       to bottom,
-      transparent 0px,
-      transparent 2px,
+      var(--mac-black) 0px,
       var(--mac-black) 2px,
-      var(--mac-black) 4px
+      var(--mac-white) 2px,
+      var(--mac-white) 4px
     );
   }
 
-  .window__stripe-gap-left {
-    flex-shrink: 0;
-    width: 4px;
-    z-index: 2;
+  .window__body {
     background: var(--mac-white);
-  }
-
-  .window__stripe-gap-right {
-    flex: 1;
-    min-width: 20px;
-    z-index: 1;
+    position: relative;
   }
 `;
 
@@ -180,7 +174,9 @@ export default function Window({
     >
       {title ? (
         <div className="window__titlebar" {...attributes} {...listeners}>
-          <div className="window__stripes" />
+          <div className="window__stripes">
+            <div className="window__stripes-inner" />
+          </div>
           <button
             className="window__close-box"
             onMouseDown={(e) => e.stopPropagation()}
@@ -189,13 +185,11 @@ export default function Window({
               removeWindow(id.current);
             }}
           />
-          <div className="window__stripe-gap-left" />
           <span className="window__title-text">{title}</span>
-          <div className="window__stripe-gap-right" />
         </div>
       ) : null}
 
-      {children}
+      <div className="window__body">{children}</div>
     </WindowWrapper>
   );
 }

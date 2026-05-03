@@ -3,9 +3,17 @@ import { useEffect, useRef, useState } from "react";
 import { PixelCanvas } from "pixel-paint";
 
 const CanvasWrapper = styled.div`
-  background: var(--mac-white);
-  border-top: 1px solid var(--mac-shadow-light);
-  padding: 1px;
+  background: var(--mac-light-gray);
+  padding: 3px;
+`;
+
+const CanvasInset = styled.div`
+  /* Inset bevel around the canvas */
+  border-top: 2px solid var(--mac-darker-gray);
+  border-left: 2px solid var(--mac-darker-gray);
+  border-bottom: 2px solid var(--mac-white);
+  border-right: 2px solid var(--mac-white);
+  line-height: 0;
 `;
 
 const StyledCanvas = styled.canvas`
@@ -14,7 +22,6 @@ const StyledCanvas = styled.canvas`
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
-
   cursor: crosshair;
 `;
 
@@ -89,45 +96,47 @@ export default function PixelCanvasRenderer() {
 
   return (
     <CanvasWrapper>
-      <StyledCanvas
-        ref={canvasRef}
-        onMouseDown={(e) => {
-          const canvas = canvasRef.current;
-          if (!canvas) return;
-          if (!pa) return;
+      <CanvasInset>
+        <StyledCanvas
+          ref={canvasRef}
+          onMouseDown={(e) => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            if (!pa) return;
 
-          const point = getCanvasPoint(canvas, e.clientX, e.clientY);
+            const point = getCanvasPoint(canvas, e.clientX, e.clientY);
 
-          if (window.mode === "fill") {
-            pa.fill(point.x, point.y);
+            if (window.mode === "fill") {
+              pa.fill(point.x, point.y);
+              stopDrawing();
+              return;
+            }
+
+            isDrawing.current = true;
+            points.current = [point];
+            drawSegment(point, point);
+          }}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onContextMenu={(e) => {
+            e.preventDefault();
             stopDrawing();
-            return;
-          }
+          }}
+          onMouseMove={(e) => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            if (!pa) return;
+            if (!isDrawing.current) return;
 
-          isDrawing.current = true;
-          points.current = [point];
-          drawSegment(point, point);
-        }}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          stopDrawing();
-        }}
-        onMouseMove={(e) => {
-          const canvas = canvasRef.current;
-          if (!canvas) return;
-          if (!pa) return;
-          if (!isDrawing.current) return;
+            const point = getCanvasPoint(canvas, e.clientX, e.clientY);
+            const previousPoint = points.current[points.current.length - 1];
+            if (!previousPoint) return;
 
-          const point = getCanvasPoint(canvas, e.clientX, e.clientY);
-          const previousPoint = points.current[points.current.length - 1];
-          if (!previousPoint) return;
-
-          points.current.push(point);
-          drawSegment(previousPoint, point);
-        }}
-      />
+            points.current.push(point);
+            drawSegment(previousPoint, point);
+          }}
+        />
+      </CanvasInset>
     </CanvasWrapper>
   );
 }

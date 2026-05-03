@@ -31,10 +31,10 @@ const DesktopWrapper = styled.div`
     height: 100%;
     user-select: none;
 
-    /* Classic Macintosh dithered desktop pattern */
+    /* Classic Macintosh dithered desktop */
     background-color: #6699cc;
-    background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='2' height='2' fill='%235588bb'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%235588bb'/%3E%3C/svg%3E");
-    background-size: 4px 4px;
+    background-image: url("data:image/svg+xml,%3Csvg width='2' height='2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23336699'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23336699'/%3E%3C/svg%3E");
+    background-size: 2px 2px;
     image-rendering: pixelated;
   }
 `;
@@ -45,7 +45,7 @@ const DesktopIconWrapper = styled.button`
   width: 64px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex-direction: column;
   gap: 2px;
   padding: 4px;
@@ -64,6 +64,7 @@ const DesktopIconWrapper = styled.button`
     font-weight: bold;
     color: var(--mac-black);
 
+    /* Dog-ear fold */
     &::after {
       content: "";
       position: absolute;
@@ -99,7 +100,7 @@ const DesktopIconWrapper = styled.button`
     overflow: hidden;
     white-space: nowrap;
     color: var(--mac-white);
-    padding: 0 2px;
+    padding: 1px 3px;
   }
 
   &[data-active="true"] {
