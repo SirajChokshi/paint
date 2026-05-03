@@ -32,16 +32,25 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
   text-align: center;
   line-height: 1;
   margin: 2px;
+  color: var(--mac-black);
 
-  background: ${({ isActive }) =>
-    isActive ? "var(--mac-black)" : "var(--mac-white)"};
-  color: ${({ isActive }) =>
-    isActive ? "var(--mac-white)" : "var(--mac-black)"};
-  border: 1px solid var(--mac-black);
+  /* Pressed inset look when active, raised look when inactive */
+  background: ${({ isActive }) => (isActive ? "#aaaaaa" : "var(--mac-white)")};
+  border-top: 2px solid
+    ${({ isActive }) => (isActive ? "#666666" : "var(--mac-white)")};
+  border-left: 2px solid
+    ${({ isActive }) => (isActive ? "#666666" : "var(--mac-white)")};
+  border-bottom: 2px solid
+    ${({ isActive }) => (isActive ? "var(--mac-white)" : "#666666")};
+  border-right: 2px solid
+    ${({ isActive }) => (isActive ? "var(--mac-white)" : "#666666")};
 
   &:active {
-    background: var(--mac-black);
-    color: var(--mac-white);
+    background: #999999;
+    border-top-color: #555555;
+    border-left-color: #555555;
+    border-bottom-color: var(--mac-white);
+    border-right-color: var(--mac-white);
   }
 `;
 
