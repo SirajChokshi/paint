@@ -31,26 +31,29 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
   cursor: default;
   text-align: center;
   line-height: 1;
-  margin: 2px;
+  margin: 1px;
   color: var(--mac-black);
+  background: ${({ isActive }) => (isActive ? "#bbbbbb" : "#dddddd")};
 
-  /* Pressed inset look when active, raised look when inactive */
-  background: ${({ isActive }) => (isActive ? "#aaaaaa" : "var(--mac-white)")};
-  border-top: 2px solid
-    ${({ isActive }) => (isActive ? "#666666" : "var(--mac-white)")};
+  /* outer 1px black frame */
+  outline: 1px solid var(--mac-black);
+
+  /* 3D bevel: light top-left / dark bottom-right when raised,
+     inverted when pressed */
+  border-top: 2px solid ${({ isActive }) => (isActive ? "#888888" : "#ffffff")};
   border-left: 2px solid
-    ${({ isActive }) => (isActive ? "#666666" : "var(--mac-white)")};
+    ${({ isActive }) => (isActive ? "#888888" : "#ffffff")};
   border-bottom: 2px solid
-    ${({ isActive }) => (isActive ? "var(--mac-white)" : "#666666")};
+    ${({ isActive }) => (isActive ? "#ffffff" : "#888888")};
   border-right: 2px solid
-    ${({ isActive }) => (isActive ? "var(--mac-white)" : "#666666")};
+    ${({ isActive }) => (isActive ? "#ffffff" : "#888888")};
 
   &:active {
-    background: #999999;
-    border-top-color: #555555;
-    border-left-color: #555555;
-    border-bottom-color: var(--mac-white);
-    border-right-color: var(--mac-white);
+    background: #aaaaaa;
+    border-top-color: #888888;
+    border-left-color: #888888;
+    border-bottom-color: #ffffff;
+    border-right-color: #ffffff;
   }
 `;
 
