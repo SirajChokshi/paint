@@ -14,92 +14,107 @@ const DesktopWrapper = styled.div`
     z-index: 1;
     width: 100%;
     height: 100%;
-    padding: 30px;
+    padding: 16px;
     box-sizing: border-box;
     display: flex;
-    flex-flow: column;
+    flex-flow: column wrap;
+    align-content: flex-end;
+    gap: 4px;
   }
 
   .bg {
     position: absolute;
     z-index: 0;
-    top: -5px;
-    left: -5px;
-    width: calc(100% + 10px);
-    height: calc(100% + 10px);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     user-select: none;
 
-    filter: blur(1px);
-
-    background: var(--gray-600);
-
-    opacity: 0.8;
-    background-size: 0.5rem 0.5rem;
-    animation: scan 5s linear infinite;
-
-    @keyframes scan {
-      0% {
-        background-position: 0 0;
-      }
-      100% {
-        background-position: -1rem 1rem;
-      }
-    }
+    /* Classic Macintosh dithered desktop pattern */
+    background-color: #6699cc;
+    background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='2' height='2' fill='%235588bb'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%235588bb'/%3E%3C/svg%3E");
+    background-size: 4px 4px;
+    image-rendering: pixelated;
   }
 `;
 
 const DesktopIconWrapper = styled.button`
   all: unset;
-  cursor: pointer;
-  width: min-content;
-  height: min-content;
-  gap: 4px;
+  cursor: default;
+  width: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-
-  width: 84px;
-  height: 84px;
+  gap: 2px;
+  padding: 4px;
 
   .icon {
-    width: 48px;
-    height: 48px;
-    padding: 6px;
-    box-sizing: border-box;
-    background: red;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: relative;
+    background: var(--mac-white);
+    border: 1px solid var(--mac-black);
+    font-family: var(--chicago);
+    font-size: 9px;
+    font-weight: bold;
+    color: var(--mac-black);
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 8px 8px 0;
+      border-color: transparent var(--mac-white) transparent transparent;
+    }
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 8px;
+      height: 8px;
+      border-bottom: 1px solid var(--mac-black);
+      border-left: 1px solid var(--mac-black);
+    }
   }
 
   span {
     display: block;
-    padding: 0 2px;
     max-width: 100%;
-
-    line-height: 1.25;
-
+    font-family: var(--chicago);
+    font-size: 10px;
+    line-height: 1.2;
     text-align: center;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+    color: var(--mac-white);
+    padding: 0 2px;
   }
 
   &[data-active="true"] {
-    .icon::before {
-      content: "";
-      display: block;
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      background: var(--gray-500);
-      opacity: 0.3;
+    .icon {
+      background: var(--mac-black);
+      color: var(--mac-white);
+
+      &::after {
+        border-color: transparent var(--mac-black) transparent transparent;
+      }
     }
 
     span {
-      background: var(--gray-300);
-      color: var(--gray-0);
+      background: var(--mac-black);
+      color: var(--mac-white);
     }
   }
 `;
@@ -117,7 +132,7 @@ export function DesktopIcon(
       onDoubleClick={props.onOpen}
       data-active={props.active}
     >
-      <div className="icon">TXT</div>
+      <div className="icon">IMG</div>
       <span>{props.name}</span>
     </DesktopIconWrapper>
   );

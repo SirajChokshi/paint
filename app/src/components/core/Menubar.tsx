@@ -10,22 +10,35 @@ const MenubarWrapper = styled(Toolbar.Root)`
   align-items: stretch;
   justify-content: flex-start;
 
-  background-color: white;
-  border-bottom: 2px solid black;
-  height: 1.825rem;
+  background-color: var(--mac-white);
+  border-bottom: 2px solid var(--mac-black);
+  height: 20px;
   width: 100%;
   z-index: 9999;
+  font-family: var(--chicago);
+  font-size: 12px;
 
   button {
     all: unset;
-    padding: 0 0.75rem;
-    cursor: pointer;
+    padding: 0 12px;
+    cursor: default;
+    font-family: var(--chicago);
+    font-size: 12px;
+    line-height: 18px;
+    height: 18px;
 
     &:hover,
     &[aria-expanded="true"] {
-      background-color: black;
-      color: white;
+      background-color: var(--mac-black);
+      color: var(--mac-white);
     }
+  }
+`;
+
+const AppleMenuTrigger = styled.button`
+  && {
+    font-size: 14px;
+    padding: 0 8px;
   }
 `;
 
@@ -38,7 +51,7 @@ export default function Menubar() {
       <Menu
         actions={[
           {
-            name: "About",
+            name: "About Pixel Paint",
             onClick: () => {
               addWindow({
                 id: "about",
@@ -59,7 +72,7 @@ export default function Menubar() {
           },
         ]}
       >
-        <button>⌘</button>
+        <AppleMenuTrigger>&#63743;</AppleMenuTrigger>
       </Menu>
       <Menu
         actions={[
