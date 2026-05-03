@@ -82,7 +82,7 @@ export default function Tools() {
     setTool(t);
     if (t === "erase") {
       setColor("#ffffff");
-    } else if (t === "pencil") {
+    } else {
       setColor(selectedColor === "#ffffff" ? "#000000" : selectedColor);
     }
   }
