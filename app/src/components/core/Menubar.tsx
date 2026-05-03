@@ -10,15 +10,13 @@ const MenubarWrapper = styled(Toolbar.Root)`
   align-items: stretch;
   justify-content: flex-start;
 
-  background-color: var(--mac-light-gray);
-  border-bottom: 2px solid var(--mac-black);
-  height: 22px;
+  background-color: var(--mac-white);
+  border-bottom: 1px solid var(--mac-black);
+  height: 20px;
   width: 100%;
   z-index: 9999;
   font-family: var(--chicago);
   font-size: 12px;
-
-  box-shadow: inset 0 -1px 0 var(--mac-dark-gray);
 
   button {
     all: unset;
@@ -26,10 +24,8 @@ const MenubarWrapper = styled(Toolbar.Root)`
     cursor: default;
     font-family: var(--chicago);
     font-size: 12px;
-    line-height: 20px;
-    height: 20px;
-    font-weight: bold;
-
+    line-height: 19px;
+    height: 19px;
     &:hover,
     &[aria-expanded="true"] {
       background-color: var(--mac-black);

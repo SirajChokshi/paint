@@ -3,16 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { PixelCanvas } from "pixel-paint";
 
 const CanvasWrapper = styled.div`
-  background: var(--mac-light-gray);
-  padding: 3px;
+  background: var(--mac-white);
+  padding: 2px;
 `;
 
 const CanvasInset = styled.div`
-  /* Inset bevel around the canvas */
-  border-top: 2px solid var(--mac-darker-gray);
-  border-left: 2px solid var(--mac-darker-gray);
-  border-bottom: 2px solid var(--mac-white);
-  border-right: 2px solid var(--mac-white);
+  border: 1px solid var(--mac-black);
   line-height: 0;
 `;
 

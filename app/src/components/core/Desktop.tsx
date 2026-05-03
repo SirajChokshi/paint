@@ -31,11 +31,13 @@ const DesktopWrapper = styled.div`
     height: 100%;
     user-select: none;
 
-    /* Classic Macintosh dithered desktop */
-    background-color: #6699cc;
-    background-image: url("data:image/svg+xml,%3Csvg width='2' height='2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23336699'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23336699'/%3E%3C/svg%3E");
+    /* Classic Mac OS desktop dithered pattern */
+    background-color: #4a7dc6;
+    background-image: url("/dither.png");
     background-size: 2px 2px;
+    background-repeat: repeat;
     image-rendering: pixelated;
+    image-rendering: crisp-edges;
   }
 `;
 
@@ -61,10 +63,9 @@ const DesktopIconWrapper = styled.button`
     border: 1px solid var(--mac-black);
     font-family: var(--chicago);
     font-size: 9px;
-    font-weight: bold;
+    font-weight: normal;
     color: var(--mac-black);
 
-    /* Dog-ear fold */
     &::after {
       content: "";
       position: absolute;
@@ -94,6 +95,7 @@ const DesktopIconWrapper = styled.button`
     max-width: 100%;
     font-family: var(--chicago);
     font-size: 10px;
+    font-weight: normal;
     line-height: 1.2;
     text-align: center;
     text-overflow: ellipsis;

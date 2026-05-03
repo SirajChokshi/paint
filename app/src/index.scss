@@ -13,10 +13,11 @@
   font-weight: 400;
 
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizeSpeed;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: unset;
   -webkit-text-size-adjust: 100%;
+  font-smooth: never;
 }
 
 #root {

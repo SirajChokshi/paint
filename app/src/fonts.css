@@ -25,7 +25,7 @@
 @font-face {
   font-family: 'Chicago';
   font-style: normal;
-  font-weight: normal;
+  font-weight: 100 900;
   font-display: swap;
   size-adjust: 112.5%;
   src: url('/fonts/ChiKareGo.ttf?v=1.0') format('truetype');

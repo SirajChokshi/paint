@@ -6,24 +6,24 @@ type DrawMode = "line" | "fill";
 const ToolGrid = styled.div`
   display: flex;
   flex-direction: column;
-  background: var(--mac-light-gray);
+  background: var(--mac-white);
   padding: 0;
-  width: 108px;
+  width: 106px;
 `;
 
 const ToolSection = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
-  padding: 6px;
-  background: var(--mac-light-gray);
+  gap: 0;
+  padding: 4px;
+  background: var(--mac-white);
 `;
 
 const ToolButton = styled.button<{ isActive?: boolean }>`
   all: unset;
   box-sizing: border-box;
-  width: 44px;
-  height: 36px;
+  width: 46px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,70 +34,47 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
   line-height: 1;
 
   background: ${({ isActive }) =>
-    isActive ? "var(--mac-dark-gray)" : "var(--mac-light-gray)"};
+    isActive ? "var(--mac-black)" : "var(--mac-white)"};
   color: ${({ isActive }) =>
     isActive ? "var(--mac-white)" : "var(--mac-black)"};
 
-  /* Classic Mac 3D bevel */
-  border-top: 2px solid
-    ${({ isActive }) =>
-      isActive ? "var(--mac-darker-gray)" : "var(--mac-white)"};
-  border-left: 2px solid
-    ${({ isActive }) =>
-      isActive ? "var(--mac-darker-gray)" : "var(--mac-white)"};
-  border-bottom: 2px solid
-    ${({ isActive }) =>
-      isActive ? "var(--mac-white)" : "var(--mac-darker-gray)"};
-  border-right: 2px solid
-    ${({ isActive }) =>
-      isActive ? "var(--mac-white)" : "var(--mac-darker-gray)"};
+  border: 1px solid var(--mac-black);
+  margin: 1px;
 
   &:active {
-    background: var(--mac-dark-gray);
+    background: var(--mac-black);
     color: var(--mac-white);
-    border-top-color: var(--mac-darker-gray);
-    border-left-color: var(--mac-darker-gray);
-    border-bottom-color: var(--mac-white);
-    border-right-color: var(--mac-white);
   }
 `;
 
 const Divider = styled.div`
-  height: 2px;
-  background: var(--mac-dark-gray);
-  margin: 0 4px;
-  box-shadow: 0 1px 0 var(--mac-white);
+  height: 1px;
+  background: var(--mac-black);
+  margin: 0;
 `;
 
 const ColorSwatch = styled.button<{ swatchColor: string }>`
   all: unset;
   box-sizing: border-box;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   background: ${({ swatchColor }) => swatchColor};
   cursor: default;
-
-  /* Inset well */
-  border-top: 2px solid var(--mac-darker-gray);
-  border-left: 2px solid var(--mac-darker-gray);
-  border-bottom: 2px solid var(--mac-white);
-  border-right: 2px solid var(--mac-white);
+  border: 1px solid var(--mac-black);
 
   &:active {
-    border-top-color: var(--mac-white);
-    border-left-color: var(--mac-white);
-    border-bottom-color: var(--mac-darker-gray);
-    border-right-color: var(--mac-darker-gray);
+    border: 2px solid var(--mac-white);
   }
 `;
 
 const ColorGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 18px);
-  gap: 2px;
+  grid-template-columns: repeat(5, 16px);
+  gap: 1px;
   padding: 6px;
   justify-content: center;
-  background: var(--mac-light-gray);
+  align-items: center;
+  background: var(--mac-white);
 `;
 
 const COLORS = [
