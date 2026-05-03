@@ -2,6 +2,14 @@ import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
 
 type DrawMode = "line" | "fill";
+type Tool = "pencil" | "line" | "fill" | "erase";
+
+const TOOL_TO_MODE: Record<Tool, DrawMode> = {
+  pencil: "line",
+  line: "line",
+  fill: "fill",
+  erase: "line",
+};
 
 const ToolGrid = styled.div`
   display: grid;
@@ -23,6 +31,17 @@ const ToolGrid = styled.div`
     &[data-active="true"] {
       border: 2px inset grey;
       filter: brightness(0.85);
+    }
+
+    &.color {
+      border: 2px outset grey;
+      position: relative;
+
+      &[data-selected="true"] {
+        border: 2px solid black;
+        outline: 1px solid white;
+        outline-offset: -3px;
+      }
     }
   }
 `;
@@ -46,40 +65,51 @@ const COLORS = [
 ];
 
 export default function Tools() {
-  const [mode, setMode] = useState<DrawMode>(window.mode ?? "line");
+  const [tool, setTool] = useState<Tool>("pencil");
+  const [selectedColor, setSelectedColor] = useState("#000000");
 
   useEffect(() => {
-    window.mode = mode;
-  }, [mode]);
+    window.mode = TOOL_TO_MODE[tool];
+  }, [tool]);
 
   function setColor(color: string) {
     if (!window.pixel) return;
     window.pixel.color = color;
+    setSelectedColor(color);
+  }
+
+  function selectTool(t: Tool) {
+    setTool(t);
+    if (t === "erase") {
+      setColor("#ffffff");
+    } else if (t === "pencil") {
+      setColor(selectedColor === "#ffffff" ? "#000000" : selectedColor);
+    }
   }
 
   return (
     <ToolGrid>
       <button
-        data-active={mode === "line"}
-        onClick={() => {
-          setMode("line");
-          setColor("#000000");
-        }}
+        data-active={tool === "pencil"}
+        onClick={() => selectTool("pencil")}
       >
         Pencil
       </button>
-      <button data-active={mode === "line"} onClick={() => setMode("line")}>
+      <button
+        data-active={tool === "line"}
+        onClick={() => selectTool("line")}
+      >
         Line
       </button>
-      <button data-active={mode === "fill"} onClick={() => setMode("fill")}>
+      <button
+        data-active={tool === "fill"}
+        onClick={() => selectTool("fill")}
+      >
         Fill
       </button>
       <button
-        data-active={mode === "line"}
-        onClick={() => {
-          setMode("line");
-          setColor("#ffffff");
-        }}
+        data-active={tool === "erase"}
+        onClick={() => selectTool("erase")}
       >
         Erase
       </button>
@@ -90,7 +120,13 @@ export default function Tools() {
           style={{ background: color }}
           aria-label={`Set drawing color to ${color}`}
           title={color}
-          onClick={() => setColor(color)}
+          data-selected={selectedColor === color && tool !== "erase"}
+          onClick={() => {
+            setColor(color);
+            if (tool === "erase") {
+              setTool("pencil");
+            }
+          }}
         ></button>
       ))}
     </ToolGrid>

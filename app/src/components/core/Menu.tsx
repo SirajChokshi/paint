@@ -69,7 +69,7 @@ export function Menu(props: MenuProps) {
                 <Menu
                   key={action.name}
                   actions={action.items}
-                  side="left"
+                  side="right"
                   isSubMenu={true}
                 >
                   <button>{action.name}</button>
