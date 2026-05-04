@@ -134,7 +134,7 @@ export default function Window({
     removeWindow,
     touchWindow,
     getStackOrder,
-    moveWindow,
+    setWindowPosition,
   } = useWindowStore();
   const initialX = defaultPosition?.x ?? 0;
   const initialY = defaultPosition?.y ?? 0;
@@ -177,7 +177,7 @@ export default function Window({
     const start = dragRef.current;
     if (!start) return;
 
-    moveWindow(
+    setWindowPosition(
       id.current,
       calculateDragPosition({
         startPosition: start.position,

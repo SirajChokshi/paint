@@ -78,6 +78,20 @@ describe("calculateDragPosition", () => {
       y: 37,
     });
   });
+
+  it("returns an absolute position, not a delta", () => {
+    expect(
+      calculateDragPosition({
+        startPosition: { x: 140, y: 12 },
+        startPointer: { x: 300, y: 100 },
+        currentPointer: { x: 500, y: 180 },
+        scale: 2,
+      })
+    ).toEqual({
+      x: 240,
+      y: 52,
+    });
+  });
 });
 
 describe("mapViewportPointToVirtualScreen", () => {
