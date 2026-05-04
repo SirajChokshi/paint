@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
-  INDEXED_128_COLOR_PALETTE,
+  INDEXED_16_COLOR_PALETTE,
   calculateCanvasComputerLayout,
   getMenuAtPoint,
   getWindowDragHandle,
@@ -12,11 +12,11 @@ import {
 } from "./canvasComputer";
 
 describe("calculateCanvasComputerLayout", () => {
-  it("uses the largest integer scale that fits the viewport", () => {
+  it("uses the largest integer scale that fits the screen and monitor", () => {
     expect(
       calculateCanvasComputerLayout({
         viewportWidth: 1500,
-        viewportHeight: 1000,
+        viewportHeight: 1100,
       })
     ).toEqual({
       scale: 2,
@@ -25,11 +25,11 @@ describe("calculateCanvasComputerLayout", () => {
     });
   });
 
-  it("does not use fractional scaling on small viewports", () => {
+  it("accounts for the monitor bezel instead of clipping vertically", () => {
     expect(
       calculateCanvasComputerLayout({
-        viewportWidth: 900,
-        viewportHeight: 700,
+        viewportWidth: 1500,
+        viewportHeight: 1000,
       }).scale
     ).toBe(1);
   });
@@ -94,11 +94,12 @@ describe("moveWindowByPointer", () => {
 });
 
 describe("quantizeToIndexedPalette", () => {
-  it("uses a 128 color indexed paint palette", () => {
-    expect(INDEXED_128_COLOR_PALETTE).toHaveLength(128);
-    expect(new Set(INDEXED_128_COLOR_PALETTE).size).toBe(128);
-    expect(INDEXED_128_COLOR_PALETTE).toContain("#000000");
-    expect(INDEXED_128_COLOR_PALETTE).toContain("#ffffff");
+  it("uses a curated 16 color indexed paint palette", () => {
+    expect(INDEXED_16_COLOR_PALETTE).toHaveLength(16);
+    expect(new Set(INDEXED_16_COLOR_PALETTE).size).toBe(16);
+    expect(INDEXED_16_COLOR_PALETTE).toContain("#000000");
+    expect(INDEXED_16_COLOR_PALETTE).toContain("#ffffff");
+    expect(INDEXED_16_COLOR_PALETTE).toContain("#00aa00");
     expect(quantizeToIndexedPalette("#fefefe")).toBe("#ffffff");
     expect(quantizeToIndexedPalette("#010101")).toBe("#000000");
   });

@@ -5,7 +5,7 @@ import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
   CanvasWindow,
-  INDEXED_128_COLOR_PALETTE,
+  INDEXED_16_COLOR_PALETTE,
   MACINTOSH_CHROME_PALETTE,
   Point,
   calculateCanvasComputerLayout,
@@ -28,9 +28,9 @@ const MENU_HEIGHT = 21;
 const PAINT_CANVAS_WIDTH = 368;
 const PAINT_CANVAS_HEIGHT = 238;
 const PAINT_SCROLLBAR_GAP = 12;
-const PALETTE_SWATCH_SIZE = 6;
-const PALETTE_COLUMNS = 16;
-const TOOL_COLORS = INDEXED_128_COLOR_PALETTE.map(quantizeToIndexedPalette);
+const PALETTE_SWATCH_SIZE = 18;
+const PALETTE_COLUMNS = 4;
+const TOOL_COLORS = INDEXED_16_COLOR_PALETTE.map(quantizeToIndexedPalette);
 
 const Shell = styled.div`
   min-width: 100vw;
