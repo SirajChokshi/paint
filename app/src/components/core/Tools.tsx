@@ -2,6 +2,14 @@ import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
 
 type DrawMode = "line" | "fill";
+type Tool = "pencil" | "line" | "fill" | "erase";
+
+const TOOL_TO_MODE: Record<Tool, DrawMode> = {
+  pencil: "line",
+  line: "line",
+  fill: "fill",
+  erase: "line",
+};
 
 const ToolGrid = styled.div`
   display: flex;
@@ -38,7 +46,7 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
     border-bottom: none;
   }
 
-  /* Light dotted pattern for selected state — reads as subtle texture */
+  /* Light dotted pattern for selected state */
   background: ${({ isActive }) =>
     isActive
       ? `url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='4' height='4' fill='white'/%3E%3Crect x='0' y='0' width='1' height='1' fill='%23000'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23000'/%3E%3C/svg%3E")`
@@ -146,7 +154,6 @@ const FillIcon = () => (
       <rect x="10" y="5" width="1" height="2" fill="black" />
       <rect x="9" y="3" width="1" height="2" fill="black" />
       <rect x="8" y="2" width="1" height="1" fill="black" />
-      {/* drip */}
       <rect x="7" y="12" width="1" height="1" fill="black" />
       <rect x="7" y="13" width="1" height="1" fill="black" />
       <rect x="7" y="14" width="1" height="1" fill="black" />
@@ -262,55 +269,58 @@ const COLORS = [
 ];
 
 export default function Tools() {
-  const [mode, setMode] = useState<DrawMode>(window.mode ?? "line");
-  const [currentColor, setCurrentColor] = useState("#000000");
+  const [tool, setTool] = useState<Tool>("pencil");
+  const [selectedColor, setSelectedColor] = useState("#000000");
 
   useEffect(() => {
-    window.mode = mode;
-  }, [mode]);
+    window.mode = TOOL_TO_MODE[tool];
+  }, [tool]);
 
   function setColor(color: string) {
+    setSelectedColor(color);
     if (!window.pixel) return;
     window.pixel.color = color;
-    setCurrentColor(color);
+  }
+
+  function selectTool(t: Tool) {
+    setTool(t);
+    if (t === "erase") {
+      setColor("#ffffff");
+    } else if (t === "pencil") {
+      setColor(selectedColor === "#ffffff" ? "#000000" : selectedColor);
+    }
   }
 
   return (
     <ToolGrid>
       <ToolSection>
         <ToolButton
-          isActive={mode === "line"}
-          onClick={() => {
-            setMode("line");
-            setColor("#000000");
-          }}
+          isActive={tool === "pencil"}
+          onClick={() => selectTool("pencil")}
           title="Pencil"
         >
           <PencilIcon />
           <ToolLabel>Pencil</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={mode === "line"}
-          onClick={() => setMode("line")}
+          isActive={tool === "line"}
+          onClick={() => selectTool("line")}
           title="Line"
         >
           <LineIcon />
           <ToolLabel>Line</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={mode === "fill"}
-          onClick={() => setMode("fill")}
+          isActive={tool === "fill"}
+          onClick={() => selectTool("fill")}
           title="Fill"
         >
           <FillIcon />
           <ToolLabel>Fill</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={mode === "line"}
-          onClick={() => {
-            setMode("line");
-            setColor("#ffffff");
-          }}
+          isActive={tool === "erase"}
+          onClick={() => selectTool("erase")}
           title="Eraser"
         >
           <EraseIcon />
@@ -319,7 +329,7 @@ export default function Tools() {
       </ToolSection>
       <FgBgSection>
         <FgBgPreview>
-          <FgBox color={currentColor} />
+          <FgBox color={selectedColor} />
           <BgBox />
         </FgBgPreview>
       </FgBgSection>
@@ -328,10 +338,15 @@ export default function Tools() {
           <ColorSwatch
             key={color}
             swatchColor={color}
-            isSelected={currentColor === color}
+            isSelected={selectedColor === color && tool !== "erase"}
             aria-label={`Set drawing color to ${color}`}
             title={color}
-            onClick={() => setColor(color)}
+            onClick={() => {
+              setColor(color);
+              if (tool === "erase") {
+                setTool("pencil");
+              }
+            }}
           />
         ))}
       </ColorGrid>

@@ -38,7 +38,7 @@ const MenubarWrapper = styled(Toolbar.Root)`
 `;
 
 export default function Menubar() {
-  const { addWindow, getWindow } = useWindowStore();
+  const { addWindow, getWindow, removeWindow } = useWindowStore();
   const { save, files } = useFileStore();
 
   return (
@@ -67,7 +67,7 @@ export default function Menubar() {
           },
         ]}
       >
-        <button>&#63743;</button>
+        <button>⌘</button>
       </Menu>
       <Menu
         actions={[
@@ -126,7 +126,9 @@ export default function Menubar() {
           {
             name: getWindow(WINDOW_IDS.tools) ? "✓ Tools" : "  Tools",
             onClick: () => {
-              if (!getWindow(WINDOW_IDS.tools)) {
+              if (getWindow(WINDOW_IDS.tools)) {
+                removeWindow(WINDOW_IDS.tools);
+              } else {
                 addWindow({
                   id: WINDOW_IDS.tools,
                   position: { x: 15, y: 15 },
@@ -137,7 +139,9 @@ export default function Menubar() {
           {
             name: getWindow(WINDOW_IDS.canvas) ? "✓ Canvas" : "  Canvas",
             onClick: () => {
-              if (!getWindow(WINDOW_IDS.canvas)) {
+              if (getWindow(WINDOW_IDS.canvas)) {
+                removeWindow(WINDOW_IDS.canvas);
+              } else {
                 addWindow({
                   id: WINDOW_IDS.canvas,
                   position: { x: 180, y: 15 },
