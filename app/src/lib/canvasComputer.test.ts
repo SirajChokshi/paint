@@ -6,8 +6,10 @@ import {
   calculateCanvasComputerLayout,
   getMenuAtPoint,
   getWindowDragHandle,
+  clampWindowPosition,
   moveWindowByPointer,
   quantizeToIndexedPalette,
+  getPaletteIndexAtPoint,
   screenPointToCanvasPoint,
 } from "./canvasComputer";
 
@@ -16,7 +18,7 @@ describe("calculateCanvasComputerLayout", () => {
     expect(
       calculateCanvasComputerLayout({
         viewportWidth: 1500,
-        viewportHeight: 1100,
+        viewportHeight: 900,
       })
     ).toEqual({
       scale: 2,
@@ -29,7 +31,7 @@ describe("calculateCanvasComputerLayout", () => {
     expect(
       calculateCanvasComputerLayout({
         viewportWidth: 1500,
-        viewportHeight: 1000,
+        viewportHeight: 760,
       }).scale
     ).toBe(1);
   });
@@ -93,6 +95,17 @@ describe("moveWindowByPointer", () => {
   });
 });
 
+describe("clampWindowPosition", () => {
+  it("keeps windows inside the fixed screen", () => {
+    expect(
+      clampWindowPosition({
+        position: { x: -20, y: 600 },
+        size: { width: 100, height: 80 },
+      })
+    ).toEqual({ x: 4, y: CANVAS_COMPUTER_HEIGHT - 80 - 24 });
+  });
+});
+
 describe("quantizeToIndexedPalette", () => {
   it("uses a curated 16 color indexed paint palette", () => {
     expect(INDEXED_16_COLOR_PALETTE).toHaveLength(16);
@@ -100,7 +113,22 @@ describe("quantizeToIndexedPalette", () => {
     expect(INDEXED_16_COLOR_PALETTE).toContain("#000000");
     expect(INDEXED_16_COLOR_PALETTE).toContain("#ffffff");
     expect(INDEXED_16_COLOR_PALETTE).toContain("#00aa00");
+    expect(INDEXED_16_COLOR_PALETTE).toContain("#0088ff");
+    expect(INDEXED_16_COLOR_PALETTE).toContain("#663300");
     expect(quantizeToIndexedPalette("#fefefe")).toBe("#ffffff");
     expect(quantizeToIndexedPalette("#010101")).toBe("#000000");
+  });
+});
+
+describe("getPaletteIndexAtPoint", () => {
+  it("matches the visible palette swatch grid", () => {
+    const input = {
+      windowPosition: { x: 14, y: 32 },
+      colorCount: INDEXED_16_COLOR_PALETTE.length,
+    };
+
+    expect(getPaletteIndexAtPoint({ ...input, point: { x: 31, y: 180 } })).toBe(0);
+    expect(getPaletteIndexAtPoint({ ...input, point: { x: 85, y: 180 } })).toBe(3);
+    expect(getPaletteIndexAtPoint({ ...input, point: { x: 31, y: 234 } })).toBe(12);
   });
 });

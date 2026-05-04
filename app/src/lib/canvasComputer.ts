@@ -1,27 +1,35 @@
-export const CANVAS_COMPUTER_WIDTH = 640;
-export const CANVAS_COMPUTER_HEIGHT = 480;
+export const CANVAS_COMPUTER_WIDTH = 512;
+export const CANVAS_COMPUTER_HEIGHT = 342;
 export const MENUBAR_HEIGHT = 21;
 export const WINDOW_TITLEBAR_HEIGHT = 20;
 export const MACINTOSH_CHROME_PALETTE = ["#000000", "#ffffff"] as const;
+export const SCREEN_WINDOW_MARGIN = 4;
+export const SCREEN_WINDOW_BOTTOM_MARGIN = 24;
+export const TOOL_PALETTE_COLUMNS = 4;
+export const TOOL_PALETTE_SWATCH_SIZE = 18;
+export const TOOL_PALETTE_OFFSET = {
+  x: 17,
+  y: 147,
+} as const;
 const MONITOR_EXTRA_WIDTH = 88;
 const MONITOR_EXTRA_HEIGHT = 96;
 export const INDEXED_16_COLOR_PALETTE = [
   "#000000",
-  "#555555",
-  "#aaaaaa",
+  "#333333",
+  "#777777",
   "#ffffff",
-  "#aa0000",
-  "#ff0000",
-  "#ffaa00",
-  "#ffff00",
+  "#880000",
+  "#cc0000",
+  "#cc6600",
+  "#aa9900",
+  "#006600",
   "#00aa00",
-  "#00ff00",
+  "#006666",
   "#00aaaa",
-  "#00ffff",
-  "#0000aa",
-  "#0000ff",
+  "#003366",
+  "#0088ff",
+  "#663300",
   "#aa00aa",
-  "#ff00ff",
 ] as const;
 
 export type MenuId = "file" | "edit" | "view";
@@ -62,6 +70,16 @@ export interface MoveWindowInput {
   startWindow: Point;
   startPointer: Point;
   currentPointer: Point;
+  windowSize?: {
+    width: number;
+    height: number;
+  };
+}
+
+export interface PaletteHitInput {
+  point: Point;
+  windowPosition: Point;
+  colorCount: number;
 }
 
 const MENU_RECTS: Array<{ id: MenuId; x: number; width: number }> = [
@@ -138,11 +156,60 @@ export function moveWindowByPointer({
   startWindow,
   startPointer,
   currentPointer,
+  windowSize,
 }: MoveWindowInput): Point {
-  return {
+  const next = {
     x: startWindow.x + currentPointer.x - startPointer.x,
     y: startWindow.y + currentPointer.y - startPointer.y,
   };
+
+  if (!windowSize) return next;
+
+  return clampWindowPosition({ position: next, size: windowSize });
+}
+
+export function clampWindowPosition({
+  position,
+  size,
+}: {
+  position: Point;
+  size: { width: number; height: number };
+}): Point {
+  return {
+    x: Math.max(
+      SCREEN_WINDOW_MARGIN,
+      Math.min(CANVAS_COMPUTER_WIDTH - size.width - SCREEN_WINDOW_MARGIN, position.x)
+    ),
+    y: Math.max(
+      MENUBAR_HEIGHT + SCREEN_WINDOW_MARGIN,
+      Math.min(
+        CANVAS_COMPUTER_HEIGHT - size.height - SCREEN_WINDOW_BOTTOM_MARGIN,
+        position.y
+      )
+    ),
+  };
+}
+
+export function getPaletteIndexAtPoint({
+  point,
+  windowPosition,
+  colorCount,
+}: PaletteHitInput): number | null {
+  const origin = {
+    x: windowPosition.x + TOOL_PALETTE_OFFSET.x,
+    y: windowPosition.y + TOOL_PALETTE_OFFSET.y,
+  };
+  const x = point.x - origin.x;
+  const y = point.y - origin.y;
+  if (x < 0 || y < 0) return null;
+
+  const column = Math.floor(x / TOOL_PALETTE_SWATCH_SIZE);
+  const row = Math.floor(y / TOOL_PALETTE_SWATCH_SIZE);
+  const rows = Math.ceil(colorCount / TOOL_PALETTE_COLUMNS);
+  if (column < 0 || column >= TOOL_PALETTE_COLUMNS || row < 0 || row >= rows) return null;
+
+  const index = row * TOOL_PALETTE_COLUMNS + column;
+  return index < colorCount ? index : null;
 }
 
 function parseHexChannel(value: string, start: number): number {

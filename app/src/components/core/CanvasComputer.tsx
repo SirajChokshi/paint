@@ -8,7 +8,11 @@ import {
   INDEXED_16_COLOR_PALETTE,
   MACINTOSH_CHROME_PALETTE,
   Point,
+  TOOL_PALETTE_COLUMNS,
+  TOOL_PALETTE_OFFSET,
+  TOOL_PALETTE_SWATCH_SIZE,
   calculateCanvasComputerLayout,
+  getPaletteIndexAtPoint,
   getMenuAtPoint,
   getWindowDragHandle,
   moveWindowByPointer,
@@ -22,14 +26,16 @@ interface DragState {
   id: string;
   startPointer: Point;
   startWindow: Point;
+  windowSize: {
+    width: number;
+    height: number;
+  };
 }
 
 const MENU_HEIGHT = 21;
-const PAINT_CANVAS_WIDTH = 368;
-const PAINT_CANVAS_HEIGHT = 238;
-const PAINT_SCROLLBAR_GAP = 12;
-const PALETTE_SWATCH_SIZE = 18;
-const PALETTE_COLUMNS = 4;
+const PAINT_CANVAS_WIDTH = 298;
+const PAINT_CANVAS_HEIGHT = 180;
+const PAINT_SCROLLBAR_GAP = 8;
 const TOOL_COLORS = INDEXED_16_COLOR_PALETTE.map(quantizeToIndexedPalette);
 
 const Shell = styled.div`
@@ -89,11 +95,9 @@ function drawDither(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   ctx.fillRect(0, MENU_HEIGHT, CANVAS_COMPUTER_WIDTH, CANVAS_COMPUTER_HEIGHT);
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
-  for (let y = MENU_HEIGHT; y < CANVAS_COMPUTER_HEIGHT; y += 2) {
-    for (let x = 0; x < CANVAS_COMPUTER_WIDTH; x += 2) {
-      if ((x + y) % 4 === 0) {
-        ctx.fillRect(x, y, 1, 1);
-      }
+  for (let y = MENU_HEIGHT + 1; y < CANVAS_COMPUTER_HEIGHT; y += 4) {
+    for (let x = 1; x < CANVAS_COMPUTER_WIDTH; x += 4) {
+      ctx.fillRect(x, y, 1, 1);
     }
   }
 }
@@ -205,22 +209,25 @@ function drawTools(
     }
     drawText(ctx, tool, x + 26, y + 29, "center");
   });
-  strokeRect1(ctx, bodyX, bodyY + 88, 104, 42);
+  strokeRect1(ctx, bodyX + 1, bodyY + 90, 102, 28);
   ctx.fillStyle = selectedColor;
-  ctx.fillRect(bodyX + 39, bodyY + 99, 20, 20);
+  ctx.fillRect(bodyX + 40, bodyY + 96, 18, 18);
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
-  strokeRect1(ctx, bodyX + 51, bodyY + 107, 20, 20);
+  strokeRect1(ctx, bodyX + 51, bodyY + 103, 18, 18);
   TOOL_COLORS.forEach((color, index) => {
-    const x = bodyX + 4 + (index % PALETTE_COLUMNS) * PALETTE_SWATCH_SIZE;
+    const x =
+      win.x +
+      TOOL_PALETTE_OFFSET.x +
+      (index % TOOL_PALETTE_COLUMNS) * TOOL_PALETTE_SWATCH_SIZE;
     const y =
-      bodyY +
-      137 +
-      Math.floor(index / PALETTE_COLUMNS) * PALETTE_SWATCH_SIZE;
+      win.y +
+      TOOL_PALETTE_OFFSET.y +
+      Math.floor(index / TOOL_PALETTE_COLUMNS) * TOOL_PALETTE_SWATCH_SIZE;
     ctx.fillStyle = color;
-    ctx.fillRect(x, y, PALETTE_SWATCH_SIZE, PALETTE_SWATCH_SIZE);
+    ctx.fillRect(x, y, TOOL_PALETTE_SWATCH_SIZE - 1, TOOL_PALETTE_SWATCH_SIZE - 1);
     if (color === selectedColor) {
       ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
-      strokeRect1(ctx, x, y, PALETTE_SWATCH_SIZE, PALETTE_SWATCH_SIZE);
+      strokeRect1(ctx, x, y, TOOL_PALETTE_SWATCH_SIZE, TOOL_PALETTE_SWATCH_SIZE);
     }
   });
 }
@@ -279,14 +286,36 @@ function drawLineOnCanvas(
 ) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 5;
-  ctx.lineCap = "square";
   ctx.imageSmoothingEnabled = false;
-  ctx.beginPath();
-  ctx.moveTo(from.x, from.y);
-  ctx.lineTo(to.x, to.y);
-  ctx.stroke();
+  ctx.fillStyle = color;
+
+  let x1 = Math.round(from.x);
+  let y1 = Math.round(from.y);
+  const x2 = Math.round(to.x);
+  const y2 = Math.round(to.y);
+  const dx = Math.abs(x2 - x1);
+  const sx = x1 < x2 ? 1 : -1;
+  const dy = -Math.abs(y2 - y1);
+  const sy = y1 < y2 ? 1 : -1;
+  let error = dx + dy;
+
+  while (true) {
+    ctx.fillRect(x1 - 2, y1 - 2, 5, 5);
+
+    if (x1 === x2 && y1 === y2) {
+      break;
+    }
+
+    const doubledError = error * 2;
+    if (doubledError >= dy) {
+      error += dy;
+      x1 += sx;
+    }
+    if (doubledError <= dx) {
+      error += dx;
+      y1 += sy;
+    }
+  }
 }
 
 export default function CanvasComputer() {
@@ -305,8 +334,8 @@ export default function CanvasComputer() {
   const [activeMenu, setActiveMenu] = useState<MenuId | null>(null);
   const [selectedColor, setSelectedColor] = useState(TOOL_COLORS[0]);
   const [windows, setWindows] = useState<CanvasWindow[]>([
-    { id: "tools", x: 15, y: 30, width: 106, height: 204, title: "Tools" },
-    { id: "paint", x: 180, y: 30, width: 440, height: 318, title: "Untitled" },
+    { id: "tools", x: 14, y: 32, width: 106, height: 220, title: "Tools" },
+    { id: "paint", x: 154, y: 34, width: 324, height: 230, title: "Untitled" },
   ]);
 
   if (!framebufferRef.current) {
@@ -430,19 +459,12 @@ export default function CanvasComputer() {
 
     const toolsWindow = windows.find((win) => win.id === "tools");
     if (toolsWindow) {
-      const paletteX = toolsWindow.x + 5;
-      const paletteY = toolsWindow.y + 158;
-      const paletteIndexX = Math.floor((point.x - paletteX) / PALETTE_SWATCH_SIZE);
-      const paletteIndexY = Math.floor((point.y - paletteY) / PALETTE_SWATCH_SIZE);
-      const paletteIndex = paletteIndexY * PALETTE_COLUMNS + paletteIndexX;
-      const paletteRows = Math.ceil(TOOL_COLORS.length / PALETTE_COLUMNS);
-      if (
-        paletteIndexX >= 0 &&
-        paletteIndexX < PALETTE_COLUMNS &&
-        paletteIndexY >= 0 &&
-        paletteIndexY < paletteRows &&
-        TOOL_COLORS[paletteIndex]
-      ) {
+      const paletteIndex = getPaletteIndexAtPoint({
+        point,
+        windowPosition: toolsWindow,
+        colorCount: TOOL_COLORS.length,
+      });
+      if (paletteIndex !== null) {
         setSelectedColor(TOOL_COLORS[paletteIndex]);
         return;
       }
@@ -466,7 +488,12 @@ export default function CanvasComputer() {
         id: dragWindow.id,
         startPointer: point,
         startWindow: { x: dragWindow.x, y: dragWindow.y },
+        windowSize: { width: dragWindow.width, height: dragWindow.height },
       };
+      setWindows((current) => [
+        ...current.filter((win) => win.id !== dragWindow.id),
+        dragWindow,
+      ]);
     }
   }
 
@@ -481,6 +508,7 @@ export default function CanvasComputer() {
         startWindow: drag.startWindow,
         startPointer: drag.startPointer,
         currentPointer: point,
+        windowSize: drag.windowSize,
       });
       setWindows((current) =>
         current.map((win) =>
