@@ -110,3 +110,43 @@ export function calculateCanvasPoint({
     y: Math.round((clientY - rect.top) * scaleY),
   };
 }
+
+export function snapPointToGrid(point: Point, gridSize: number): Point {
+  return {
+    x: Math.floor(point.x / gridSize) * gridSize,
+    y: Math.floor(point.y / gridSize) * gridSize,
+  };
+}
+
+export function pointsBetween(from: Point, to: Point, gridSize: number): Point[] {
+  const x1 = Math.floor(from.x / gridSize);
+  const y1 = Math.floor(from.y / gridSize);
+  const x2 = Math.floor(to.x / gridSize);
+  const y2 = Math.floor(to.y / gridSize);
+  const dx = Math.abs(x2 - x1);
+  const sx = x1 < x2 ? 1 : -1;
+  const dy = -Math.abs(y2 - y1);
+  const sy = y1 < y2 ? 1 : -1;
+  let x = x1;
+  let y = y1;
+  let error = dx + dy;
+  const points: Point[] = [];
+
+  while (true) {
+    points.push({ x: x * gridSize, y: y * gridSize });
+
+    if (x === x2 && y === y2) {
+      return points;
+    }
+
+    const nextError = error * 2;
+    if (nextError >= dy) {
+      error += dy;
+      x += sx;
+    }
+    if (nextError <= dx) {
+      error += dx;
+      y += sy;
+    }
+  }
+}

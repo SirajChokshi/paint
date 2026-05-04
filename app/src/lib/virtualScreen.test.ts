@@ -4,7 +4,9 @@ import {
   VIRTUAL_SCREEN_WIDTH,
   calculateCanvasPoint,
   calculateDragPosition,
+  pointsBetween,
   calculateScaledDelta,
+  snapPointToGrid,
   calculateVirtualScreenLayout,
 } from "./virtualScreen";
 
@@ -100,5 +102,25 @@ describe("calculateCanvasPoint", () => {
       x: 100,
       y: 100,
     });
+  });
+});
+
+describe("snapPointToGrid", () => {
+  it("snaps a canvas point to the active brush grid", () => {
+    expect(snapPointToGrid({ x: 103, y: 117 }, 5)).toEqual({
+      x: 100,
+      y: 115,
+    });
+  });
+});
+
+describe("pointsBetween", () => {
+  it("returns contiguous grid points between two brush cells", () => {
+    expect(pointsBetween({ x: 0, y: 0 }, { x: 15, y: 10 }, 5)).toEqual([
+      { x: 0, y: 0 },
+      { x: 5, y: 5 },
+      { x: 10, y: 5 },
+      { x: 15, y: 10 },
+    ]);
   });
 });

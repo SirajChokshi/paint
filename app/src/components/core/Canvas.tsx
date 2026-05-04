@@ -1,7 +1,9 @@
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { PixelCanvas } from "pixel-paint";
-import { calculateCanvasPoint } from "../../lib/virtualScreen";
+import { calculateCanvasPoint, snapPointToGrid } from "../../lib/virtualScreen";
+
+const BRUSH_SIZE = 5;
 
 const CanvasWrapper = styled.div`
   background: var(--mac-white);
@@ -11,6 +13,24 @@ const CanvasWrapper = styled.div`
 const CanvasInset = styled.div`
   border: 1px solid var(--mac-black);
   line-height: 0;
+  position: relative;
+
+  .brush-cursor {
+    position: absolute;
+    z-index: 1;
+    width: ${BRUSH_SIZE}px;
+    height: ${BRUSH_SIZE}px;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--mac-black), var(--mac-black)) center / 5px 1px
+        no-repeat,
+      linear-gradient(var(--mac-black), var(--mac-black)) center / 1px 5px
+        no-repeat;
+    outline: 1px solid var(--mac-black);
+    box-shadow:
+      inset 0 0 0 1px var(--mac-white),
+      0 0 0 1px var(--mac-white);
+  }
 `;
 
 const StyledCanvas = styled.canvas`
@@ -99,10 +119,8 @@ export default function PixelCanvasRenderer() {
     if (!canvas) return null;
 
     const point = getCanvasPoint(canvas, e.clientX, e.clientY);
-    setCursorPoint({
-      x: Math.floor(point.x / 5) * 5,
-      y: Math.floor(point.y / 5) * 5,
-    });
+    const snappedPoint = snapPointToGrid(point, BRUSH_SIZE);
+    setCursorPoint(snappedPoint);
 
     return point;
   }
