@@ -2,6 +2,7 @@ export const CANVAS_COMPUTER_WIDTH = 640;
 export const CANVAS_COMPUTER_HEIGHT = 480;
 export const MENUBAR_HEIGHT = 21;
 export const WINDOW_TITLEBAR_HEIGHT = 20;
+export const MACINTOSH_1984_PALETTE = ["#000000", "#ffffff"] as const;
 
 export type MenuId = "file" | "edit" | "view";
 
@@ -90,4 +91,22 @@ export function moveWindowByPointer({
     x: startWindow.x + currentPointer.x - startPointer.x,
     y: startWindow.y + currentPointer.y - startPointer.y,
   };
+}
+
+function parseHexChannel(value: string, start: number): number {
+  return Number.parseInt(value.slice(start, start + 2), 16);
+}
+
+export function quantizeToMacintoshPalette(color: string): string {
+  const normalized = color.trim().toLowerCase();
+  if (!/^#[0-9a-f]{6}$/.test(normalized)) {
+    return "#000000";
+  }
+
+  const red = parseHexChannel(normalized, 1);
+  const green = parseHexChannel(normalized, 3);
+  const blue = parseHexChannel(normalized, 5);
+  const luminance = red * 0.299 + green * 0.587 + blue * 0.114;
+
+  return luminance >= 128 ? "#ffffff" : "#000000";
 }

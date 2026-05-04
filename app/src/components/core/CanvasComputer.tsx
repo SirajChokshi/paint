@@ -1,9 +1,11 @@
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
+import { drawBitmapText, measureBitmapText } from "../../lib/bitmapFont";
 import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
   CanvasWindow,
+  MACINTOSH_1984_PALETTE,
   Point,
   getMenuAtPoint,
   getWindowDragHandle,
@@ -23,20 +25,15 @@ const SCALE = 2;
 const MENU_HEIGHT = 21;
 const TOOL_COLORS = [
   "#000000",
-  "#808080",
-  "#c0c0c0",
   "#ffffff",
-  "#ff0000",
-  "#ff8200",
-  "#ffff00",
-  "#00ff00",
-  "#008040",
-  "#00ffff",
-  "#0000ff",
-  "#c000c0",
-  "#c04020",
-  "#806000",
-  "#ffc080",
+  "#000000",
+  "#ffffff",
+  "#000000",
+  "#ffffff",
+  "#000000",
+  "#ffffff",
+  "#000000",
+  "#ffffff",
 ];
 
 const Shell = styled.div`
@@ -93,9 +90,9 @@ function rectContains(
 }
 
 function drawDither(ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = "#4a7dc6";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
   ctx.fillRect(0, MENU_HEIGHT, CANVAS_COMPUTER_WIDTH, CANVAS_COMPUTER_HEIGHT);
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
   for (let y = MENU_HEIGHT; y < CANVAS_COMPUTER_HEIGHT; y += 2) {
     for (let x = 0; x < CANVAS_COMPUTER_WIDTH; x += 2) {
       if ((x + y) % 4 === 0) {
@@ -112,19 +109,32 @@ function drawText(
   y: number,
   align: CanvasTextAlign = "left"
 ) {
-  ctx.font = "12px Chicago, Geneva, monospace";
-  ctx.textAlign = align;
-  ctx.textBaseline = "top";
-  ctx.fillText(text, x, y);
+  const width = measureBitmapText(text);
+  const startX =
+    align === "center" ? Math.round(x - width / 2) : align === "right" ? x - width : x;
+  drawBitmapText(ctx, text, startX, y);
+}
+
+function strokeRect1(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  ctx.fillRect(x, y, width, 1);
+  ctx.fillRect(x, y + height - 1, width, 1);
+  ctx.fillRect(x, y, 1, height);
+  ctx.fillRect(x + width - 1, y, 1, height);
 }
 
 function drawMenuBar(
   ctx: CanvasRenderingContext2D,
   activeMenu: MenuId | null
 ) {
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
   ctx.fillRect(0, 0, CANVAS_COMPUTER_WIDTH, MENU_HEIGHT);
-  ctx.fillStyle = "#000000";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
   ctx.fillRect(0, MENU_HEIGHT - 2, CANVAS_COMPUTER_WIDTH, 2);
   drawText(ctx, "⌘", 10, 4);
   drawText(ctx, "File", 38, 4);
@@ -141,36 +151,35 @@ function drawMenuBar(
         ? ["Undo", "Redo"]
         : ["✓ Tools", "✓ Canvas"];
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
   ctx.fillRect(menuX, MENU_HEIGHT, 160, labels.length * 20 + 4);
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(menuX, MENU_HEIGHT, 160, labels.length * 20 + 4);
-  ctx.fillStyle = "#000000";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  strokeRect1(ctx, menuX, MENU_HEIGHT, 160, labels.length * 20 + 4);
+  strokeRect1(ctx, menuX + 1, MENU_HEIGHT + 1, 158, labels.length * 20 + 2);
   labels.forEach((label, index) => {
     drawText(ctx, label, menuX + 14, MENU_HEIGHT + 5 + index * 20);
   });
 }
 
 function drawWindow(ctx: CanvasRenderingContext2D, win: CanvasWindow) {
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
   ctx.fillRect(win.x, win.y, win.width, win.height);
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(win.x, win.y, win.width, win.height);
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  strokeRect1(ctx, win.x, win.y, win.width, win.height);
   ctx.fillRect(win.x + 1, win.y + win.height, win.width, 1);
   ctx.fillRect(win.x + win.width, win.y + 1, 1, win.height);
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
   ctx.fillRect(win.x + 1, win.y + 1, win.width - 2, 19);
-  ctx.strokeRect(win.x + 4, win.y + 5, 13, 11);
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  strokeRect1(ctx, win.x + 4, win.y + 5, 13, 11);
   for (let y = win.y + 5; y < win.y + 17; y += 3) {
     ctx.fillRect(win.x + 24, y, win.width - 28, 1);
   }
-  ctx.fillStyle = "#ffffff";
-  const titleWidth = ctx.measureText(win.title).width + 14;
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  const titleWidth = measureBitmapText(win.title) + 14;
   ctx.fillRect(win.x + win.width / 2 - titleWidth / 2, win.y + 1, titleWidth, 18);
-  ctx.fillStyle = "#000000";
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
   drawText(ctx, win.title, win.x + win.width / 2, win.y + 4, "center");
 }
 
@@ -183,8 +192,8 @@ function drawTools(ctx: CanvasRenderingContext2D, win: CanvasWindow) {
     const row = Math.floor(index / 2);
     const x = bodyX + col * 52;
     const y = bodyY + row * 44;
-    ctx.strokeStyle = "#000000";
-    ctx.strokeRect(x, y, 52, 44);
+    ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+    strokeRect1(ctx, x, y, 52, 44);
     if (index === 0) {
       for (let i = 0; i < 12; i += 2) {
         ctx.fillRect(x + 19 + i, y + 8 + i, 2, 2);
@@ -192,16 +201,16 @@ function drawTools(ctx: CanvasRenderingContext2D, win: CanvasWindow) {
     }
     drawText(ctx, tool, x + 26, y + 29, "center");
   });
-  ctx.strokeRect(bodyX, bodyY + 88, 104, 42);
+  strokeRect1(ctx, bodyX, bodyY + 88, 104, 42);
   ctx.fillRect(bodyX + 39, bodyY + 99, 20, 20);
-  ctx.strokeRect(bodyX + 51, bodyY + 107, 20, 20);
+  strokeRect1(ctx, bodyX + 51, bodyY + 107, 20, 20);
   TOOL_COLORS.forEach((color, index) => {
     const x = bodyX + 8 + (index % 5) * 18;
     const y = bodyY + 137 + Math.floor(index / 5) * 18;
     ctx.fillStyle = color;
     ctx.fillRect(x, y, 18, 18);
-    ctx.strokeStyle = "#000000";
-    ctx.strokeRect(x, y, 18, 18);
+    ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+    strokeRect1(ctx, x, y, 18, 18);
   });
 }
 
@@ -214,9 +223,14 @@ function drawPaintCanvas(
   const canvasY = win.y + 24;
   const canvasWidth = win.width - 8;
   const canvasHeight = win.height - 28;
-  ctx.strokeStyle = "#000000";
-  ctx.strokeRect(canvasX - 1, canvasY - 1, canvasWidth + 2, canvasHeight + 2);
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  strokeRect1(ctx, canvasX - 1, canvasY - 1, canvasWidth + 2, canvasHeight + 2);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(canvasX, canvasY, canvasWidth, canvasHeight);
+  ctx.clip();
   ctx.drawImage(drawingCanvas, canvasX, canvasY, canvasWidth, canvasHeight);
+  ctx.restore();
 }
 
 function drawLineOnCanvas(
@@ -235,6 +249,13 @@ function drawLineOnCanvas(
   ctx.moveTo(from.x, from.y);
   ctx.lineTo(to.x, to.y);
   ctx.stroke();
+}
+
+function clampDrawingPoint(point: Point): Point {
+  return {
+    x: Math.max(0, Math.min(431, point.x)),
+    y: Math.max(0, Math.min(289, point.y)),
+  };
 }
 
 export default function CanvasComputer() {
@@ -375,8 +396,10 @@ export default function CanvasComputer() {
 
     const paintWindow = getPaintWindow();
     if (drawingPointerRef.current && paintWindow) {
-      const nextPoint = getDrawingPoint(point, paintWindow);
-      if (!nextPoint) return;
+      const nextPoint = getDrawingPoint(point, paintWindow) ?? clampDrawingPoint({
+        x: point.x - (paintWindow.x + 4),
+        y: point.y - (paintWindow.y + 24),
+      });
       drawLineOnCanvas(
         drawingRef.current!,
         drawingPointerRef.current,

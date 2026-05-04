@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
+  MACINTOSH_1984_PALETTE,
   getMenuAtPoint,
   getWindowDragHandle,
   moveWindowByPointer,
+  quantizeToMacintoshPalette,
   screenPointToCanvasPoint,
 } from "./canvasComputer";
 
@@ -63,5 +65,13 @@ describe("moveWindowByPointer", () => {
         currentPointer: { x: 80, y: 70 },
       })
     ).toEqual({ x: 70, y: 60 });
+  });
+});
+
+describe("quantizeToMacintoshPalette", () => {
+  it("uses the original 1-bit Macintosh black-white palette", () => {
+    expect(MACINTOSH_1984_PALETTE).toEqual(["#000000", "#ffffff"]);
+    expect(quantizeToMacintoshPalette("#1f1f1f")).toBe("#000000");
+    expect(quantizeToMacintoshPalette("#e0e0e0")).toBe("#ffffff");
   });
 });
