@@ -4,6 +4,7 @@ import {
   VIRTUAL_SCREEN_WIDTH,
   calculateCanvasPoint,
   calculateDragPosition,
+  mapViewportPointToVirtualScreen,
   pointsBetween,
   calculateScaledDelta,
   snapPointToGrid,
@@ -59,6 +60,26 @@ describe("calculateDragPosition", () => {
     ).toEqual({
       x: 55,
       y: 35,
+    });
+  });
+});
+
+describe("mapViewportPointToVirtualScreen", () => {
+  it("maps visible framebuffer coordinates back to virtual-screen coordinates", () => {
+    expect(
+      mapViewportPointToVirtualScreen({
+        clientX: 500,
+        clientY: 300,
+        rect: {
+          left: 180,
+          top: 60,
+          width: 1280,
+          height: 960,
+        },
+      })
+    ).toEqual({
+      x: 160,
+      y: 120,
     });
   });
 });

@@ -1,5 +1,13 @@
 import styled from "@emotion/styled";
-import { PropsWithChildren, useEffect, useLayoutEffect, useState } from "react";
+import html2canvas from "html2canvas";
+import {
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   VIRTUAL_SCREEN_HEIGHT,
   VIRTUAL_SCREEN_WIDTH,
@@ -41,6 +49,7 @@ const ScreenFrame = styled.div<{
   scaledWidth: number;
   scaledHeight: number;
 }>`
+  position: relative;
   width: ${({ scaledWidth }) => scaledWidth}px;
   height: ${({ scaledHeight }) => scaledHeight}px;
   overflow: hidden;
@@ -51,7 +60,26 @@ const ScreenFrame = styled.div<{
     0 0 0 6px #655f52;
 `;
 
-const ScreenSurface = styled.div<{ scale: number }>`
+const Framebuffer = styled.canvas<{
+  scaledWidth: number;
+  scaledHeight: number;
+}>`
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: ${({ scaledWidth }) => scaledWidth}px;
+  height: ${({ scaledHeight }) => scaledHeight}px;
+  display: block;
+  pointer-events: none;
+  background: var(--mac-white);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+`;
+
+const InteractiveLayer = styled.div<{ scale: number }>`
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: ${VIRTUAL_SCREEN_WIDTH}px;
   height: ${VIRTUAL_SCREEN_HEIGHT}px;
   transform: scale(${({ scale }) => scale});
@@ -70,7 +98,43 @@ function getViewportLayout() {
 }
 
 export default function VirtualScreen({ children }: PropsWithChildren) {
+  const sourceRef = useRef<HTMLDivElement>(null);
+  const framebufferRef = useRef<HTMLCanvasElement>(null);
+  const isRenderingRef = useRef(false);
   const [layout, setLayout] = useState<VirtualScreenLayout>(getViewportLayout);
+
+  const renderFrame = useCallback(async () => {
+    const source = sourceRef.current;
+    const framebuffer = framebufferRef.current;
+    if (!source || !framebuffer || isRenderingRef.current) return;
+
+    isRenderingRef.current = true;
+    try {
+      const frame = await html2canvas(source, {
+        backgroundColor: null,
+        scale: 1,
+        width: VIRTUAL_SCREEN_WIDTH,
+        height: VIRTUAL_SCREEN_HEIGHT,
+        windowWidth: VIRTUAL_SCREEN_WIDTH,
+        windowHeight: VIRTUAL_SCREEN_HEIGHT,
+        logging: false,
+        onclone: (documentClone) => {
+          const clonedSource = documentClone.getElementById("virtual-screen");
+          if (!clonedSource) return;
+
+          clonedSource.style.transform = "none";
+        },
+      });
+      const ctx = framebuffer.getContext("2d");
+      if (!ctx) return;
+
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT);
+      ctx.drawImage(frame, 0, 0);
+    } finally {
+      isRenderingRef.current = false;
+    }
+  }, []);
 
   useLayoutEffect(() => {
     window.virtualScreenScale = layout.scale;
@@ -101,6 +165,27 @@ export default function VirtualScreen({ children }: PropsWithChildren) {
     };
   }, [layout.scale]);
 
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    let cancelled = false;
+
+    async function renderLoop() {
+      await renderFrame();
+      if (cancelled) return;
+
+      timeoutId = window.setTimeout(renderLoop, 80);
+    }
+
+    renderLoop();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [renderFrame]);
+
   return (
     <Shell>
       <Monitor
@@ -111,9 +196,20 @@ export default function VirtualScreen({ children }: PropsWithChildren) {
           scaledWidth={layout.scaledWidth}
           scaledHeight={layout.scaledHeight}
         >
-          <ScreenSurface id="virtual-screen" scale={layout.scale}>
+          <InteractiveLayer
+            id="virtual-screen"
+            ref={sourceRef}
+            scale={layout.scale}
+          >
             {children}
-          </ScreenSurface>
+          </InteractiveLayer>
+          <Framebuffer
+            ref={framebufferRef}
+            width={VIRTUAL_SCREEN_WIDTH}
+            height={VIRTUAL_SCREEN_HEIGHT}
+            scaledWidth={layout.scaledWidth}
+            scaledHeight={layout.scaledHeight}
+          />
         </ScreenFrame>
       </Monitor>
     </Shell>

@@ -158,6 +158,7 @@ export default function Window({
 
   function startDrag(event: React.PointerEvent) {
     if (event.button !== 0) return;
+    event.preventDefault();
 
     dragRef.current = {
       position,

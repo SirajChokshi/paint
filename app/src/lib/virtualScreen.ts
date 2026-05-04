@@ -41,6 +41,17 @@ export interface DragPositionInput {
   scale: number;
 }
 
+export interface VirtualPointerInput {
+  clientX: number;
+  clientY: number;
+  rect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+}
+
 export function calculateVirtualScreenLayout({
   viewportWidth,
   viewportHeight,
@@ -92,6 +103,17 @@ export function calculateDragPosition({
   return {
     x: startPosition.x + delta.x,
     y: startPosition.y + delta.y,
+  };
+}
+
+export function mapViewportPointToVirtualScreen({
+  clientX,
+  clientY,
+  rect,
+}: VirtualPointerInput): Point {
+  return {
+    x: Math.round(((clientX - rect.left) / rect.width) * VIRTUAL_SCREEN_WIDTH),
+    y: Math.round(((clientY - rect.top) / rect.height) * VIRTUAL_SCREEN_HEIGHT),
   };
 }
 
