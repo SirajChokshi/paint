@@ -38,19 +38,18 @@ const ToolButton = styled.button<{ isActive?: boolean }>`
     border-bottom: none;
   }
 
-  /* Dithered checkerboard pattern for selected state */
+  /* Light dotted pattern for selected state — reads as subtle texture */
   background: ${({ isActive }) =>
     isActive
-      ? `url("data:image/svg+xml,%3Csvg width='2' height='2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23000'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23000'/%3E%3C/svg%3E")`
+      ? `url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='4' height='4' fill='white'/%3E%3Crect x='0' y='0' width='1' height='1' fill='%23000'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23000'/%3E%3C/svg%3E")`
       : "var(--mac-white)"};
-  background-size: 2px 2px;
+  background-size: 4px 4px;
   image-rendering: pixelated;
 
   color: var(--mac-black);
 
   &:active {
-    background: var(--mac-black);
-    color: var(--mac-white);
+    background: #ddd;
   }
 `;
 
