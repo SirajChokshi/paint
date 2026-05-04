@@ -5,12 +5,14 @@ import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
   CanvasWindow,
-  MACINTOSH_1984_PALETTE,
+  INDEXED_128_COLOR_PALETTE,
+  MACINTOSH_CHROME_PALETTE,
   Point,
   calculateCanvasComputerLayout,
   getMenuAtPoint,
   getWindowDragHandle,
   moveWindowByPointer,
+  quantizeToIndexedPalette,
   screenPointToCanvasPoint,
 } from "../../lib/canvasComputer";
 
@@ -26,18 +28,9 @@ const MENU_HEIGHT = 21;
 const PAINT_CANVAS_WIDTH = 368;
 const PAINT_CANVAS_HEIGHT = 238;
 const PAINT_SCROLLBAR_GAP = 12;
-const TOOL_COLORS = [
-  "#000000",
-  "#ffffff",
-  "#000000",
-  "#ffffff",
-  "#000000",
-  "#ffffff",
-  "#000000",
-  "#ffffff",
-  "#000000",
-  "#ffffff",
-];
+const PALETTE_SWATCH_SIZE = 6;
+const PALETTE_COLUMNS = 16;
+const TOOL_COLORS = INDEXED_128_COLOR_PALETTE.map(quantizeToIndexedPalette);
 
 const Shell = styled.div`
   min-width: 100vw;
@@ -93,9 +86,9 @@ function rectContains(
 }
 
 function drawDither(ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   ctx.fillRect(0, MENU_HEIGHT, CANVAS_COMPUTER_WIDTH, CANVAS_COMPUTER_HEIGHT);
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   for (let y = MENU_HEIGHT; y < CANVAS_COMPUTER_HEIGHT; y += 2) {
     for (let x = 0; x < CANVAS_COMPUTER_WIDTH; x += 2) {
       if ((x + y) % 4 === 0) {
@@ -135,9 +128,9 @@ function drawMenuBar(
   ctx: CanvasRenderingContext2D,
   activeMenu: MenuId | null
 ) {
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   ctx.fillRect(0, 0, CANVAS_COMPUTER_WIDTH, MENU_HEIGHT);
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   ctx.fillRect(0, MENU_HEIGHT - 2, CANVAS_COMPUTER_WIDTH, 2);
   drawText(ctx, "⌘", 10, 4);
   drawText(ctx, "File", 38, 4);
@@ -156,11 +149,11 @@ function drawMenuBar(
   const menuWidth = 176;
   const menuHeight = labels.length * 20 + 4;
 
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   ctx.fillRect(menuX + 3, MENU_HEIGHT + 3, menuWidth, menuHeight);
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   ctx.fillRect(menuX, MENU_HEIGHT, menuWidth, menuHeight);
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   strokeRect1(ctx, menuX, MENU_HEIGHT, menuWidth, menuHeight);
   strokeRect1(ctx, menuX + 1, MENU_HEIGHT + 1, menuWidth - 2, menuHeight - 2);
   labels.forEach((label, index) => {
@@ -169,28 +162,32 @@ function drawMenuBar(
 }
 
 function drawWindow(ctx: CanvasRenderingContext2D, win: CanvasWindow) {
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   ctx.fillRect(win.x, win.y, win.width, win.height);
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   strokeRect1(ctx, win.x, win.y, win.width, win.height);
   ctx.fillRect(win.x + 1, win.y + win.height, win.width, 1);
   ctx.fillRect(win.x + win.width, win.y + 1, 1, win.height);
 
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   ctx.fillRect(win.x + 1, win.y + 1, win.width - 2, 19);
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   strokeRect1(ctx, win.x + 4, win.y + 5, 13, 11);
   for (let y = win.y + 5; y < win.y + 17; y += 3) {
     ctx.fillRect(win.x + 24, y, win.width - 28, 1);
   }
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   const titleWidth = measureBitmapText(win.title) + 14;
   ctx.fillRect(win.x + win.width / 2 - titleWidth / 2, win.y + 1, titleWidth, 18);
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   drawText(ctx, win.title, win.x + win.width / 2, win.y + 4, "center");
 }
 
-function drawTools(ctx: CanvasRenderingContext2D, win: CanvasWindow) {
+function drawTools(
+  ctx: CanvasRenderingContext2D,
+  win: CanvasWindow,
+  selectedColor: string
+) {
   const bodyX = win.x + 1;
   const bodyY = win.y + 21;
   const tools = ["Pencil", "Line", "Fill", "Erase"];
@@ -199,7 +196,7 @@ function drawTools(ctx: CanvasRenderingContext2D, win: CanvasWindow) {
     const row = Math.floor(index / 2);
     const x = bodyX + col * 52;
     const y = bodyY + row * 44;
-    ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+    ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
     strokeRect1(ctx, x, y, 52, 44);
     if (index === 0) {
       for (let i = 0; i < 12; i += 2) {
@@ -209,15 +206,22 @@ function drawTools(ctx: CanvasRenderingContext2D, win: CanvasWindow) {
     drawText(ctx, tool, x + 26, y + 29, "center");
   });
   strokeRect1(ctx, bodyX, bodyY + 88, 104, 42);
+  ctx.fillStyle = selectedColor;
   ctx.fillRect(bodyX + 39, bodyY + 99, 20, 20);
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   strokeRect1(ctx, bodyX + 51, bodyY + 107, 20, 20);
   TOOL_COLORS.forEach((color, index) => {
-    const x = bodyX + 8 + (index % 5) * 18;
-    const y = bodyY + 137 + Math.floor(index / 5) * 18;
+    const x = bodyX + 4 + (index % PALETTE_COLUMNS) * PALETTE_SWATCH_SIZE;
+    const y =
+      bodyY +
+      137 +
+      Math.floor(index / PALETTE_COLUMNS) * PALETTE_SWATCH_SIZE;
     ctx.fillStyle = color;
-    ctx.fillRect(x, y, 18, 18);
-    ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
-    strokeRect1(ctx, x, y, 18, 18);
+    ctx.fillRect(x, y, PALETTE_SWATCH_SIZE, PALETTE_SWATCH_SIZE);
+    if (color === selectedColor) {
+      ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
+      strokeRect1(ctx, x, y, PALETTE_SWATCH_SIZE, PALETTE_SWATCH_SIZE);
+    }
   });
 }
 
@@ -233,7 +237,7 @@ function drawPaintCanvas(
   const scrollbarX = canvasX + canvasWidth + PAINT_SCROLLBAR_GAP;
   const scrollbarY = canvasY + canvasHeight + PAINT_SCROLLBAR_GAP;
 
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   ctx.fillRect(canvasX, canvasY, canvasWidth, canvasHeight);
   const drawingCtx = drawingCanvas.getContext("2d");
   if (!drawingCtx) return;
@@ -242,7 +246,7 @@ function drawPaintCanvas(
   ctx.putImageData(image, canvasX, canvasY);
 
   // Draw chrome last so edge strokes cannot cover scrollbars or borders.
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
   ctx.fillRect(
     canvasX + canvasWidth + 1,
     canvasY - 1,
@@ -259,7 +263,7 @@ function drawPaintCanvas(
   ctx.fillRect(canvasX, scrollbarY, canvasWidth, 13);
   ctx.fillRect(scrollbarX + 2, canvasY + 2, 9, 9);
   ctx.fillRect(canvasX + 2, scrollbarY + 2, 9, 9);
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
   strokeRect1(ctx, canvasX - 1, canvasY - 1, canvasWidth + 2, canvasHeight + 2);
   strokeRect1(ctx, scrollbarX, canvasY, 13, canvasHeight);
   strokeRect1(ctx, canvasX, scrollbarY, canvasWidth, 13);
@@ -299,6 +303,7 @@ export default function CanvasComputer() {
     })
   );
   const [activeMenu, setActiveMenu] = useState<MenuId | null>(null);
+  const [selectedColor, setSelectedColor] = useState(TOOL_COLORS[0]);
   const [windows, setWindows] = useState<CanvasWindow[]>([
     { id: "tools", x: 15, y: 30, width: 106, height: 204, title: "Tools" },
     { id: "paint", x: 180, y: 30, width: 440, height: 318, title: "Untitled" },
@@ -365,7 +370,7 @@ export default function CanvasComputer() {
             for (const win of windows) {
               drawWindow(framebufferCtx, win);
               if (win.id === "tools") {
-                drawTools(framebufferCtx, win);
+                drawTools(framebufferCtx, win, selectedColor);
               } else if (win.id === "paint") {
                 drawPaintCanvas(framebufferCtx, win, drawingCanvas);
               }
@@ -386,7 +391,7 @@ export default function CanvasComputer() {
     return () => {
       window.cancelAnimationFrame(animationFrame);
     };
-  }, [activeMenu, layout.height, layout.width, windows]);
+  }, [activeMenu, layout.height, layout.width, selectedColor, windows]);
 
   function getPoint(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = screenRef.current;
@@ -422,6 +427,26 @@ export default function CanvasComputer() {
       return;
     }
     setActiveMenu(null);
+
+    const toolsWindow = windows.find((win) => win.id === "tools");
+    if (toolsWindow) {
+      const paletteX = toolsWindow.x + 5;
+      const paletteY = toolsWindow.y + 158;
+      const paletteIndexX = Math.floor((point.x - paletteX) / PALETTE_SWATCH_SIZE);
+      const paletteIndexY = Math.floor((point.y - paletteY) / PALETTE_SWATCH_SIZE);
+      const paletteIndex = paletteIndexY * PALETTE_COLUMNS + paletteIndexX;
+      const paletteRows = Math.ceil(TOOL_COLORS.length / PALETTE_COLUMNS);
+      if (
+        paletteIndexX >= 0 &&
+        paletteIndexX < PALETTE_COLUMNS &&
+        paletteIndexY >= 0 &&
+        paletteIndexY < paletteRows &&
+        TOOL_COLORS[paletteIndex]
+      ) {
+        setSelectedColor(TOOL_COLORS[paletteIndex]);
+        return;
+      }
+    }
 
     const paintWindow = getPaintWindow();
     if (paintWindow && rectContains(point, {
@@ -476,7 +501,7 @@ export default function CanvasComputer() {
         drawingRef.current!,
         drawingPointerRef.current,
         nextPoint,
-        "#000000"
+        selectedColor
       );
       drawingPointerRef.current = nextPoint;
     }

@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
-  MACINTOSH_1984_PALETTE,
+  INDEXED_128_COLOR_PALETTE,
   calculateCanvasComputerLayout,
   getMenuAtPoint,
   getWindowDragHandle,
   moveWindowByPointer,
-  quantizeToMacintoshPalette,
+  quantizeToIndexedPalette,
   screenPointToCanvasPoint,
 } from "./canvasComputer";
 
@@ -93,10 +93,13 @@ describe("moveWindowByPointer", () => {
   });
 });
 
-describe("quantizeToMacintoshPalette", () => {
-  it("uses the original 1-bit Macintosh black-white palette", () => {
-    expect(MACINTOSH_1984_PALETTE).toEqual(["#000000", "#ffffff"]);
-    expect(quantizeToMacintoshPalette("#1f1f1f")).toBe("#000000");
-    expect(quantizeToMacintoshPalette("#e0e0e0")).toBe("#ffffff");
+describe("quantizeToIndexedPalette", () => {
+  it("uses a 128 color indexed paint palette", () => {
+    expect(INDEXED_128_COLOR_PALETTE).toHaveLength(128);
+    expect(new Set(INDEXED_128_COLOR_PALETTE).size).toBe(128);
+    expect(INDEXED_128_COLOR_PALETTE).toContain("#000000");
+    expect(INDEXED_128_COLOR_PALETTE).toContain("#ffffff");
+    expect(quantizeToIndexedPalette("#fefefe")).toBe("#ffffff");
+    expect(quantizeToIndexedPalette("#010101")).toBe("#000000");
   });
 });
