@@ -22,7 +22,6 @@
     "@radix-ui/react-menubar": "^1.1.16",
     "@radix-ui/react-portal": "^1.1.10",
     "@radix-ui/react-toolbar": "^1.1.11",
-    "html2canvas": "^1.4.1",
     "pixel-paint": "workspace:*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
