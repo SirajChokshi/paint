@@ -8,6 +8,7 @@ import Tools from "./components/core/Tools";
 import VirtualScreen from "./components/core/VirtualScreen";
 import Window from "./components/Window";
 import { AboutWindow } from "./components/windows/about-window";
+import { calculateScaledDelta } from "./lib/virtualScreen";
 import { useWindowStore } from "./stores/windowStore";
 
 export const WINDOW_IDS = {
@@ -29,12 +30,10 @@ function App() {
       sensors={[mouseSensor]}
       modifiers={[restrictToParentElement]}
       onDragEnd={({ delta, active: { id } }) => {
-        const scale = window.virtualScreenScale ?? 1;
-
-        moveWindow(id as string, {
-          x: delta.x / scale,
-          y: delta.y / scale,
-        });
+        moveWindow(
+          id as string,
+          calculateScaledDelta(delta, window.virtualScreenScale ?? 1)
+        );
       }}
     >
       <VirtualScreen>

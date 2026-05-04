@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   VIRTUAL_SCREEN_HEIGHT,
   VIRTUAL_SCREEN_WIDTH,
+  calculateCanvasPoint,
+  calculateScaledDelta,
   calculateVirtualScreenLayout,
 } from "./virtualScreen";
 
@@ -30,5 +32,36 @@ describe("calculateVirtualScreenLayout", () => {
         viewportHeight: 240,
       }).scale
     ).toBe(1);
+  });
+});
+
+describe("calculateScaledDelta", () => {
+  it("converts viewport movement into virtual-screen movement", () => {
+    expect(calculateScaledDelta({ x: 80, y: 40 }, 2)).toEqual({
+      x: 40,
+      y: 20,
+    });
+  });
+});
+
+describe("calculateCanvasPoint", () => {
+  it("maps pointer coordinates through a scaled canvas rect", () => {
+    expect(
+      calculateCanvasPoint({
+        canvasWidth: 435,
+        canvasHeight: 290,
+        rect: {
+          left: 460,
+          top: 120,
+          width: 870,
+          height: 580,
+        },
+        clientX: 660,
+        clientY: 320,
+      })
+    ).toEqual({
+      x: 100,
+      y: 100,
+    });
   });
 });

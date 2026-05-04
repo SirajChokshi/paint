@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { PixelCanvas } from "pixel-paint";
+import { calculateCanvasPoint } from "../../lib/virtualScreen";
 
 const CanvasWrapper = styled.div`
   background: var(--mac-white);
@@ -32,13 +33,13 @@ function getCanvasPoint(
   clientY: number
 ): Point {
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-
-  return {
-    x: (clientX - rect.left) * scaleX,
-    y: (clientY - rect.top) * scaleY,
-  };
+  return calculateCanvasPoint({
+    canvasWidth: canvas.width,
+    canvasHeight: canvas.height,
+    rect,
+    clientX,
+    clientY,
+  });
 }
 
 export default function PixelCanvasRenderer() {

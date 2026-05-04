@@ -8,6 +8,8 @@ const WindowWrapper = styled.div<{
   z: number;
   left: number;
   top: number;
+  dragX: number;
+  dragY: number;
   allDraggable: boolean;
 }>`
   position: absolute;
@@ -27,6 +29,7 @@ const WindowWrapper = styled.div<{
   grid-template-rows: min-content 1fr;
 
   ${({ allDraggable }) => (allDraggable ? "cursor: grab;" : "")}
+  transform: translate3d(${({ dragX }) => dragX}px, ${({ dragY }) => dragY}px, 0);
 
   .window__titlebar {
     height: 20px;
@@ -122,11 +125,9 @@ export default function Window({
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: id.current,
   });
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
-    : undefined;
+  const scale = window.virtualScreenScale ?? 1;
+  const dragX = transform ? transform.x / scale : 0;
+  const dragY = transform ? transform.y / scale : 0;
 
   const { getWindow, addWindow, removeWindow, touchWindow, getStackOrder } =
     useWindowStore();
@@ -162,9 +163,10 @@ export default function Window({
     <WindowWrapper
       ref={setNodeRef}
       className="window"
-      style={style}
       left={position.x}
       top={position.y}
+      dragX={dragX}
+      dragY={dragY}
       z={alwaysOnTop ? 9999 : getStackOrder(id.current) + 99}
       allDraggable={!title}
       onMouseDown={() => touchWindow(id.current)}
