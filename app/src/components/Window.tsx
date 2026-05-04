@@ -13,16 +13,14 @@ const WindowWrapper = styled.div<{
   position: absolute;
   top: ${({ top }) => top}px;
   left: ${({ left }) => left}px;
-
   width: min-content;
-
   z-index: ${({ z }) => z};
 
-  background: white;
-  color: black;
-  border: 2px solid black;
-  box-shadow: 2px 2px black;
-  overflow: auto;
+  border: 1px solid var(--mac-black);
+  box-shadow: 1px 1px 0 var(--mac-black);
+  overflow: hidden;
+
+  background: var(--mac-white);
 
   display: grid;
   grid-template-columns: 1fr;
@@ -30,16 +28,77 @@ const WindowWrapper = styled.div<{
 
   ${({ allDraggable }) => (allDraggable ? "cursor: grab;" : "")}
 
-  .window__title {
-    height: 1.825rem;
-    padding: 0 0.5rem;
+  .window__titlebar {
+    height: 20px;
     user-select: none;
-    line-height: 1.925rem;
-    border-bottom: 2px solid black;
     cursor: grab;
-    font-weight: bold;
+    display: flex;
+    align-items: center;
+    position: relative;
+    background: var(--mac-white);
+    padding: 0;
+    border-bottom: 1px solid var(--mac-black);
+  }
 
-    font-size: 1.125rem;
+  .window__close-box {
+    all: unset;
+    box-sizing: border-box;
+    width: 13px;
+    height: 11px;
+    border: 1px solid var(--mac-black);
+    background: var(--mac-white);
+    margin: 0 3px 0 4px;
+    flex-shrink: 0;
+    cursor: default;
+    position: relative;
+    z-index: 2;
+
+    &:active {
+      background: var(--mac-black);
+    }
+  }
+
+  .window__title-text {
+    font-family: var(--chicago);
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+    white-space: nowrap;
+    padding: 0 6px;
+    z-index: 2;
+    position: relative;
+    background: var(--mac-white);
+  }
+
+  .window__stripes {
+    position: absolute;
+    top: 0;
+    left: 22px;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .window__stripes-inner {
+    width: 100%;
+    height: 14px;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--mac-white) 0px,
+      var(--mac-white) 1px,
+      var(--mac-black) 1px,
+      var(--mac-black) 2px,
+      var(--mac-white) 2px,
+      var(--mac-white) 3px
+    );
+  }
+
+  .window__body {
+    background: var(--mac-white);
+    position: relative;
   }
 `;
 
@@ -92,7 +151,6 @@ export default function Window({
 
   const { position } = maybeWindow;
 
-  // use the whole window as a drag handle if there is no title
   const windowHandler = title
     ? {}
     : {
@@ -113,13 +171,23 @@ export default function Window({
       {...windowHandler}
     >
       {title ? (
-        // only render the title if it exists
-        <div className="window__title font-sm" {...attributes} {...listeners}>
-          {title}
+        <div className="window__titlebar" {...attributes} {...listeners}>
+          <div className="window__stripes">
+            <div className="window__stripes-inner" />
+          </div>
+          <button
+            className="window__close-box"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              removeWindow(id.current);
+            }}
+          />
+          <span className="window__title-text">{title}</span>
         </div>
       ) : null}
 
-      {children}
+      <div className="window__body">{children}</div>
     </WindowWrapper>
   );
 }

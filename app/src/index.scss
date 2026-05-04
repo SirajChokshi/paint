@@ -1,33 +1,47 @@
 :root {
-  --garamond-stack: "Palatino Linotype", Palatino, Palladio, "URW Palladio L", "Book Antiqua", Baskerville, "Bookman Old Style", "Bitstream Charter", "Nimbus Roman No9 L", Garamond, "Apple Garamond", "ITC Garamond Narrow", "New Century Schoolbook", "Century Schoolbook", "Century Schoolbook L", Georgia, serif;
-  
-  --redaction: 'Redaction 35', var(--garamond-stack);
-  --chicago: 'Chicago', var(--redaction);
+  --garamond-stack: "Palatino Linotype", Palatino, Palladio, "URW Palladio L",
+    "Book Antiqua", Baskerville, "Bookman Old Style", "Bitstream Charter",
+    "Nimbus Roman No9 L", Garamond, "Apple Garamond", "ITC Garamond Narrow",
+    "New Century Schoolbook", "Century Schoolbook", "Century Schoolbook L",
+    Georgia, serif;
+
+  --redaction: "Redaction 35", var(--garamond-stack);
+  --chicago: "Chicago", "ChicagoFLF", "Geneva", system-ui, sans-serif;
 
   font-family: var(--chicago);
   line-height: 1.5;
-  font-weight: 400;  
+  font-weight: 400;
 
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale; 
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
   -webkit-text-size-adjust: 100%;
+  font-smooth: never;
 }
 
 #root {
-  font-size: 18px;
+  font-size: 12px;
   display: contents;
 
+  --mac-black: #000000;
+  --mac-white: #ffffff;
+  --mac-gray: #c0c0c0;
+  --mac-light-gray: #dddddd;
+  --mac-dark-gray: #808080;
+  --mac-darker-gray: #555555;
+  --mac-lightest: #eeeeee;
+  --mac-desktop-blue: #5b9bd5;
+
   --gray-999: #000000;
-  --gray-950:#0b0b0b;
+  --gray-950: #0b0b0b;
   --gray-900: #222222;
   --gray-700: #444444;
   --gray-600: #555555;
-  --gray-500:#777777;
+  --gray-500: #777777;
   --gray-400: #888888;
   --gray-300: #aaaaaa;
-  --gray-200:#bbbbbb;
+  --gray-200: #bbbbbb;
   --gray-100: #dddddd;
   --gray-50: #eeeeee;
   --gray-0: #ffffff;
@@ -36,9 +50,11 @@
 * {
   user-select: none;
   box-sizing: border-box;
+  image-rendering: pixelated;
 }
 
-html, body {
+html,
+body {
   padding: 0;
   margin: 0;
 }
@@ -51,9 +67,7 @@ html {
 body {
   margin: 0;
   display: grid;
-  
   height: 100%;
-
   grid-template-columns: 1fr;
   grid-template-rows: min-content 1fr;
 }
@@ -65,14 +79,16 @@ main {
 .font {
   &-sm {
     font-family: var(--chicago);
+    font-size: 12px;
   }
 
   &-md {
     font-family: var(--chicago);
+    font-size: 12px;
   }
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: 2em;
   line-height: 1.1;
 }

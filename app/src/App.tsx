@@ -9,6 +9,12 @@ import Window from "./components/Window";
 import { AboutWindow } from "./components/windows/about-window";
 import { useWindowStore } from "./stores/windowStore";
 
+export const WINDOW_IDS = {
+  tools: "tools",
+  canvas: "canvas",
+  about: "about",
+} as const;
+
 function App() {
   const { moveWindow } = useWindowStore();
   const mouseSensor = useSensor(MouseSensor, {
@@ -30,6 +36,7 @@ function App() {
         <Desktop />
         <Window
           title="Tools"
+          id={WINDOW_IDS.tools}
           defaultPosition={{
             x: 15,
             y: 15,
@@ -39,8 +46,9 @@ function App() {
         </Window>
         <Window
           title="Untitled"
+          id={WINDOW_IDS.canvas}
           defaultPosition={{
-            x: 150,
+            x: 180,
             y: 15,
           }}
         >

@@ -4,33 +4,41 @@ import { useFileStore } from "../../stores/fileStore";
 import { FrameBus } from "../../lib/frame";
 import { Menu } from "./Menu";
 import { useWindowStore } from "../../stores/windowStore";
+import { WINDOW_IDS } from "../../App";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   display: flex;
   align-items: stretch;
   justify-content: flex-start;
 
-  background-color: white;
-  border-bottom: 2px solid black;
-  height: 1.825rem;
+  background-color: var(--mac-white);
+  border-bottom: 2px solid var(--mac-black);
+  height: 21px;
   width: 100%;
   z-index: 9999;
+  font-family: var(--chicago);
+  font-size: 12px;
+  box-shadow: 0 1px 0 var(--mac-white);
 
   button {
     all: unset;
-    padding: 0 0.75rem;
-    cursor: pointer;
+    padding: 0 10px;
+    cursor: default;
+    font-family: var(--chicago);
+    font-size: 12px;
+    line-height: 19px;
+    height: 19px;
 
     &:hover,
     &[aria-expanded="true"] {
-      background-color: black;
-      color: white;
+      background-color: var(--mac-black);
+      color: var(--mac-white);
     }
   }
 `;
 
 export default function Menubar() {
-  const { addWindow } = useWindowStore();
+  const { addWindow, getWindow, removeWindow } = useWindowStore();
   const { save, files } = useFileStore();
 
   return (
@@ -38,13 +46,13 @@ export default function Menubar() {
       <Menu
         actions={[
           {
-            name: "About",
+            name: "About Pixel Paint",
             onClick: () => {
               addWindow({
-                id: "about",
+                id: WINDOW_IDS.about,
                 position: {
-                  x: 10,
-                  y: 10,
+                  x: 80,
+                  y: 40,
                 },
               });
             },
@@ -112,6 +120,38 @@ export default function Menubar() {
         ]}
       >
         <button>Edit</button>
+      </Menu>
+      <Menu
+        actions={[
+          {
+            name: getWindow(WINDOW_IDS.tools) ? "✓ Tools" : "  Tools",
+            onClick: () => {
+              if (getWindow(WINDOW_IDS.tools)) {
+                removeWindow(WINDOW_IDS.tools);
+              } else {
+                addWindow({
+                  id: WINDOW_IDS.tools,
+                  position: { x: 15, y: 15 },
+                });
+              }
+            },
+          },
+          {
+            name: getWindow(WINDOW_IDS.canvas) ? "✓ Canvas" : "  Canvas",
+            onClick: () => {
+              if (getWindow(WINDOW_IDS.canvas)) {
+                removeWindow(WINDOW_IDS.canvas);
+              } else {
+                addWindow({
+                  id: WINDOW_IDS.canvas,
+                  position: { x: 180, y: 15 },
+                });
+              }
+            },
+          },
+        ]}
+      >
+        <button>View</button>
       </Menu>
     </MenubarWrapper>
   );
