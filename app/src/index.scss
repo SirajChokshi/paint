@@ -73,6 +73,9 @@ body {
 
 main {
   position: relative;
+  width: 640px;
+  height: calc(480px - 21px);
+  overflow: hidden;
 }
 
 .font {

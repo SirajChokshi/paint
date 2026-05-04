@@ -2,14 +2,12 @@ import styled from "@emotion/styled";
 import { PropsWithChildren, useEffect, useRef } from "react";
 import { v4 } from "uuid";
 import { Position, useWindowStore } from "../stores/windowStore";
-import { useDraggable } from "@dnd-kit/core";
+import { calculateDragPosition } from "../lib/virtualScreen";
 
 const WindowWrapper = styled.div<{
   z: number;
   left: number;
   top: number;
-  dragX: number;
-  dragY: number;
   allDraggable: boolean;
 }>`
   position: absolute;
@@ -29,7 +27,6 @@ const WindowWrapper = styled.div<{
   grid-template-rows: min-content 1fr;
 
   ${({ allDraggable }) => (allDraggable ? "cursor: grab;" : "")}
-  transform: translate3d(${({ dragX }) => dragX}px, ${({ dragY }) => dragY}px, 0);
 
   .window__titlebar {
     height: 20px;
@@ -111,6 +108,7 @@ interface WindowProps {
   id?: string;
   startClosed?: boolean;
   defaultPosition?: Position;
+  dragFromBody?: boolean;
 }
 
 export default function Window({
@@ -120,17 +118,23 @@ export default function Window({
   id: controlledId,
   startClosed,
   defaultPosition,
+  dragFromBody,
 }: PropsWithChildren<WindowProps>) {
   const id = useRef(controlledId ?? v4());
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: id.current,
-  });
-  const scale = window.virtualScreenScale ?? 1;
-  const dragX = transform ? transform.x / scale : 0;
-  const dragY = transform ? transform.y / scale : 0;
+  const windowRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    position: Position;
+    pointer: Position;
+  } | null>(null);
 
-  const { getWindow, addWindow, removeWindow, touchWindow, getStackOrder } =
-    useWindowStore();
+  const {
+    getWindow,
+    addWindow,
+    removeWindow,
+    touchWindow,
+    getStackOrder,
+    moveWindow,
+  } = useWindowStore();
   const initialX = defaultPosition?.x ?? 0;
   const initialY = defaultPosition?.y ?? 0;
 
@@ -152,28 +156,64 @@ export default function Window({
 
   const { position } = maybeWindow;
 
-  const windowHandler = title
-    ? {}
-    : {
-        ...listeners,
-        ...attributes,
-      };
+  function startDrag(event: React.PointerEvent) {
+    if (event.button !== 0) return;
+
+    dragRef.current = {
+      position,
+      pointer: {
+        x: event.clientX,
+        y: event.clientY,
+      },
+    };
+    touchWindow(id.current);
+    windowRef.current?.setPointerCapture(event.pointerId);
+  }
+
+  function drag(event: React.PointerEvent) {
+    const start = dragRef.current;
+    if (!start) return;
+
+    moveWindow(
+      id.current,
+      calculateDragPosition({
+        startPosition: start.position,
+        startPointer: start.pointer,
+        currentPointer: {
+          x: event.clientX,
+          y: event.clientY,
+        },
+        scale: window.virtualScreenScale ?? 1,
+      })
+    );
+  }
+
+  function stopDrag(event: React.PointerEvent) {
+    dragRef.current = null;
+    if (windowRef.current?.hasPointerCapture(event.pointerId)) {
+      windowRef.current.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  const windowHandler = dragFromBody || !title ? { onPointerDown: startDrag } : {};
+  const titlebarHandler = dragFromBody ? {} : { onPointerDown: startDrag };
 
   return (
     <WindowWrapper
-      ref={setNodeRef}
+      ref={windowRef}
       className="window"
       left={position.x}
       top={position.y}
-      dragX={dragX}
-      dragY={dragY}
       z={alwaysOnTop ? 9999 : getStackOrder(id.current) + 99}
-      allDraggable={!title}
+      allDraggable={!title || dragFromBody === true}
+      onPointerMove={drag}
+      onPointerUp={stopDrag}
+      onPointerCancel={stopDrag}
       onMouseDown={() => touchWindow(id.current)}
       {...windowHandler}
     >
       {title ? (
-        <div className="window__titlebar" {...attributes} {...listeners}>
+        <div className="window__titlebar" {...titlebarHandler}>
           <div className="window__stripes">
             <div className="window__stripes-inner" />
           </div>

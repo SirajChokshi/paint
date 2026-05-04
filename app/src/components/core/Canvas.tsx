@@ -19,7 +19,7 @@ const StyledCanvas = styled.canvas`
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
-  cursor: crosshair;
+  cursor: none;
 `;
 
 interface Point {
@@ -48,6 +48,7 @@ export default function PixelCanvasRenderer() {
   const points = useRef<Point[]>([]);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
+  const [cursorPoint, setCursorPoint] = useState<Point | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -93,17 +94,29 @@ export default function PixelCanvasRenderer() {
     pa.stroke();
   }
 
+  function moveCursor(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const point = getCanvasPoint(canvas, e.clientX, e.clientY);
+    setCursorPoint({
+      x: Math.floor(point.x / 5) * 5,
+      y: Math.floor(point.y / 5) * 5,
+    });
+
+    return point;
+  }
+
   return (
     <CanvasWrapper>
       <CanvasInset>
         <StyledCanvas
           ref={canvasRef}
           onMouseDown={(e) => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
             if (!pa) return;
 
-            const point = getCanvasPoint(canvas, e.clientX, e.clientY);
+            const point = moveCursor(e);
+            if (!point) return;
 
             if (window.mode === "fill") {
               pa.fill(point.x, point.y);
@@ -116,18 +129,21 @@ export default function PixelCanvasRenderer() {
             drawSegment(point, point);
           }}
           onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
+          onMouseLeave={() => {
+            setCursorPoint(null);
+            stopDrawing();
+          }}
           onContextMenu={(e) => {
             e.preventDefault();
             stopDrawing();
           }}
           onMouseMove={(e) => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
             if (!pa) return;
+
+            const point = moveCursor(e);
+            if (!point) return;
             if (!isDrawing.current) return;
 
-            const point = getCanvasPoint(canvas, e.clientX, e.clientY);
             const previousPoint = points.current[points.current.length - 1];
             if (!previousPoint) return;
 
@@ -135,6 +151,15 @@ export default function PixelCanvasRenderer() {
             drawSegment(previousPoint, point);
           }}
         />
+        {cursorPoint ? (
+          <div
+            className="brush-cursor"
+            style={{
+              left: cursorPoint.x,
+              top: cursorPoint.y,
+            }}
+          />
+        ) : null}
       </CanvasInset>
     </CanvasWrapper>
   );

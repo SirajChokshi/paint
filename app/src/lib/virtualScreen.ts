@@ -34,6 +34,13 @@ export interface CanvasPointInput {
   clientY: number;
 }
 
+export interface DragPositionInput {
+  startPosition: Point;
+  startPointer: Point;
+  currentPointer: Point;
+  scale: number;
+}
+
 export function calculateVirtualScreenLayout({
   viewportWidth,
   viewportHeight,
@@ -68,6 +75,26 @@ export function calculateScaledDelta(delta: Point, scale: number): Point {
   };
 }
 
+export function calculateDragPosition({
+  startPosition,
+  startPointer,
+  currentPointer,
+  scale,
+}: DragPositionInput): Point {
+  const delta = calculateScaledDelta(
+    {
+      x: currentPointer.x - startPointer.x,
+      y: currentPointer.y - startPointer.y,
+    },
+    scale
+  );
+
+  return {
+    x: startPosition.x + delta.x,
+    y: startPosition.y + delta.y,
+  };
+}
+
 export function calculateCanvasPoint({
   canvasWidth,
   canvasHeight,
@@ -79,7 +106,7 @@ export function calculateCanvasPoint({
   const scaleY = canvasHeight / rect.height;
 
   return {
-    x: (clientX - rect.left) * scaleX,
-    y: (clientY - rect.top) * scaleY,
+    x: Math.round((clientX - rect.left) * scaleX),
+    y: Math.round((clientY - rect.top) * scaleY),
   };
 }

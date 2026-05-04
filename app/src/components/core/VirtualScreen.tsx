@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren, useEffect, useLayoutEffect, useState } from "react";
 import {
   VIRTUAL_SCREEN_HEIGHT,
   VIRTUAL_SCREEN_WIDTH,
@@ -72,6 +72,12 @@ function getViewportLayout() {
 export default function VirtualScreen({ children }: PropsWithChildren) {
   const [layout, setLayout] = useState<VirtualScreenLayout>(getViewportLayout);
 
+  useLayoutEffect(() => {
+    window.virtualScreenScale = layout.scale;
+    window.virtualScreenWidth = layout.width;
+    window.virtualScreenHeight = layout.height;
+  }, [layout.height, layout.scale, layout.width]);
+
   useEffect(() => {
     function updateLayout() {
       setLayout(getViewportLayout());
@@ -93,10 +99,6 @@ export default function VirtualScreen({ children }: PropsWithChildren) {
     return () => {
       document.documentElement.style.removeProperty("--virtual-screen-scale");
     };
-  }, [layout.scale]);
-
-  useEffect(() => {
-    window.virtualScreenScale = layout.scale;
   }, [layout.scale]);
 
   return (
