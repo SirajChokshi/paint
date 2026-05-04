@@ -18,6 +18,17 @@ export interface Rect {
   height: number;
 }
 
+export interface CanvasComputerLayoutInput {
+  viewportWidth: number;
+  viewportHeight: number;
+}
+
+export interface CanvasComputerLayout {
+  scale: number;
+  width: number;
+  height: number;
+}
+
 export interface CanvasWindow {
   id: string;
   x: number;
@@ -38,6 +49,27 @@ const MENU_RECTS: Array<{ id: MenuId; x: number; width: number }> = [
   { id: "edit", x: 68, width: 38 },
   { id: "view", x: 106, width: 42 },
 ];
+
+export function calculateCanvasComputerLayout({
+  viewportWidth,
+  viewportHeight,
+}: CanvasComputerLayoutInput): CanvasComputerLayout {
+  const scale = Math.max(
+    1,
+    Math.floor(
+      Math.min(
+        viewportWidth / CANVAS_COMPUTER_WIDTH,
+        viewportHeight / CANVAS_COMPUTER_HEIGHT
+      )
+    )
+  );
+
+  return {
+    scale,
+    width: CANVAS_COMPUTER_WIDTH * scale,
+    height: CANVAS_COMPUTER_HEIGHT * scale,
+  };
+}
 
 export function screenPointToCanvasPoint({
   clientX,

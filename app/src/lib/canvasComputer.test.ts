@@ -3,12 +3,37 @@ import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
   MACINTOSH_1984_PALETTE,
+  calculateCanvasComputerLayout,
   getMenuAtPoint,
   getWindowDragHandle,
   moveWindowByPointer,
   quantizeToMacintoshPalette,
   screenPointToCanvasPoint,
 } from "./canvasComputer";
+
+describe("calculateCanvasComputerLayout", () => {
+  it("uses the largest integer scale that fits the viewport", () => {
+    expect(
+      calculateCanvasComputerLayout({
+        viewportWidth: 1500,
+        viewportHeight: 1000,
+      })
+    ).toEqual({
+      scale: 2,
+      width: CANVAS_COMPUTER_WIDTH * 2,
+      height: CANVAS_COMPUTER_HEIGHT * 2,
+    });
+  });
+
+  it("does not use fractional scaling on small viewports", () => {
+    expect(
+      calculateCanvasComputerLayout({
+        viewportWidth: 900,
+        viewportHeight: 700,
+      }).scale
+    ).toBe(1);
+  });
+});
 
 describe("screenPointToCanvasPoint", () => {
   it("maps scaled screen coordinates into the fixed canvas resolution", () => {

@@ -7,6 +7,7 @@ import {
   CanvasWindow,
   MACINTOSH_1984_PALETTE,
   Point,
+  calculateCanvasComputerLayout,
   getMenuAtPoint,
   getWindowDragHandle,
   moveWindowByPointer,
@@ -21,8 +22,10 @@ interface DragState {
   startWindow: Point;
 }
 
-const SCALE = 2;
 const MENU_HEIGHT = 21;
+const PAINT_CANVAS_WIDTH = 368;
+const PAINT_CANVAS_HEIGHT = 238;
+const PAINT_SCROLLBAR_GAP = 12;
 const TOOL_COLORS = [
   "#000000",
   "#ffffff",
@@ -48,12 +51,12 @@ const Shell = styled.div`
     radial-gradient(circle at 50% 45%, #343434 0, #181818 58%, #050505 100%);
 `;
 
-const Monitor = styled.div`
+const Monitor = styled.div<{ screenWidth: number; screenHeight: number }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: ${CANVAS_COMPUTER_WIDTH * SCALE + 56}px;
-  height: ${CANVAS_COMPUTER_HEIGHT * SCALE + 64}px;
+  width: ${({ screenWidth }) => screenWidth + 56}px;
+  height: ${({ screenHeight }) => screenHeight + 64}px;
   border: 2px solid #050505;
   border-radius: 14px;
   background: linear-gradient(145deg, #d8d2bd, #8f8975);
@@ -63,9 +66,9 @@ const Monitor = styled.div`
     0 26px 70px rgba(0, 0, 0, 0.55);
 `;
 
-const Screen = styled.canvas`
-  width: ${CANVAS_COMPUTER_WIDTH * SCALE}px;
-  height: ${CANVAS_COMPUTER_HEIGHT * SCALE}px;
+const Screen = styled.canvas<{ screenWidth: number; screenHeight: number }>`
+  width: ${({ screenWidth }) => screenWidth}px;
+  height: ${({ screenHeight }) => screenHeight}px;
   display: block;
   border: 2px solid #101010;
   background: #ffffff;
@@ -150,12 +153,16 @@ function drawMenuBar(
       : activeMenu === "edit"
         ? ["Undo", "Redo"]
         : ["✓ Tools", "✓ Canvas"];
+  const menuWidth = 176;
+  const menuHeight = labels.length * 20 + 4;
 
-  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
-  ctx.fillRect(menuX, MENU_HEIGHT, 160, labels.length * 20 + 4);
   ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
-  strokeRect1(ctx, menuX, MENU_HEIGHT, 160, labels.length * 20 + 4);
-  strokeRect1(ctx, menuX + 1, MENU_HEIGHT + 1, 158, labels.length * 20 + 2);
+  ctx.fillRect(menuX + 3, MENU_HEIGHT + 3, menuWidth, menuHeight);
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillRect(menuX, MENU_HEIGHT, menuWidth, menuHeight);
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
+  strokeRect1(ctx, menuX, MENU_HEIGHT, menuWidth, menuHeight);
+  strokeRect1(ctx, menuX + 1, MENU_HEIGHT + 1, menuWidth - 2, menuHeight - 2);
   labels.forEach((label, index) => {
     drawText(ctx, label, menuX + 14, MENU_HEIGHT + 5 + index * 20);
   });
@@ -221,16 +228,43 @@ function drawPaintCanvas(
 ) {
   const canvasX = win.x + 4;
   const canvasY = win.y + 24;
-  const canvasWidth = win.width - 8;
-  const canvasHeight = win.height - 28;
+  const canvasWidth = PAINT_CANVAS_WIDTH;
+  const canvasHeight = PAINT_CANVAS_HEIGHT;
+  const scrollbarX = canvasX + canvasWidth + PAINT_SCROLLBAR_GAP;
+  const scrollbarY = canvasY + canvasHeight + PAINT_SCROLLBAR_GAP;
+
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillRect(canvasX, canvasY, canvasWidth, canvasHeight);
+  const drawingCtx = drawingCanvas.getContext("2d");
+  if (!drawingCtx) return;
+
+  const image = drawingCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+  ctx.putImageData(image, canvasX, canvasY);
+
+  // Draw chrome last so edge strokes cannot cover scrollbars or borders.
+  ctx.fillStyle = MACINTOSH_1984_PALETTE[1];
+  ctx.fillRect(
+    canvasX + canvasWidth + 1,
+    canvasY - 1,
+    PAINT_SCROLLBAR_GAP - 1,
+    canvasHeight + 2
+  );
+  ctx.fillRect(
+    canvasX - 1,
+    canvasY + canvasHeight + 1,
+    canvasWidth + 2,
+    PAINT_SCROLLBAR_GAP - 1
+  );
+  ctx.fillRect(scrollbarX, canvasY, 13, canvasHeight);
+  ctx.fillRect(canvasX, scrollbarY, canvasWidth, 13);
+  ctx.fillRect(scrollbarX + 2, canvasY + 2, 9, 9);
+  ctx.fillRect(canvasX + 2, scrollbarY + 2, 9, 9);
   ctx.fillStyle = MACINTOSH_1984_PALETTE[0];
   strokeRect1(ctx, canvasX - 1, canvasY - 1, canvasWidth + 2, canvasHeight + 2);
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(canvasX, canvasY, canvasWidth, canvasHeight);
-  ctx.clip();
-  ctx.drawImage(drawingCanvas, canvasX, canvasY, canvasWidth, canvasHeight);
-  ctx.restore();
+  strokeRect1(ctx, scrollbarX, canvasY, 13, canvasHeight);
+  strokeRect1(ctx, canvasX, scrollbarY, canvasWidth, 13);
+  strokeRect1(ctx, scrollbarX + 2, canvasY + 2, 9, 9);
+  strokeRect1(ctx, canvasX + 2, scrollbarY + 2, 9, 9);
 }
 
 function drawLineOnCanvas(
@@ -251,29 +285,36 @@ function drawLineOnCanvas(
   ctx.stroke();
 }
 
-function clampDrawingPoint(point: Point): Point {
-  return {
-    x: Math.max(0, Math.min(431, point.x)),
-    y: Math.max(0, Math.min(289, point.y)),
-  };
-}
-
 export default function CanvasComputer() {
   const screenRef = useRef<HTMLCanvasElement>(null);
+  const framebufferRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef<HTMLCanvasElement | null>(null);
   const pointerRef = useRef<Point | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const drawingPointerRef = useRef<Point | null>(null);
+  const [layout, setLayout] = useState(() =>
+    calculateCanvasComputerLayout({
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    })
+  );
   const [activeMenu, setActiveMenu] = useState<MenuId | null>(null);
   const [windows, setWindows] = useState<CanvasWindow[]>([
     { id: "tools", x: 15, y: 30, width: 106, height: 204, title: "Tools" },
     { id: "paint", x: 180, y: 30, width: 440, height: 318, title: "Untitled" },
   ]);
 
+  if (!framebufferRef.current) {
+    const canvas = document.createElement("canvas");
+    canvas.width = CANVAS_COMPUTER_WIDTH;
+    canvas.height = CANVAS_COMPUTER_HEIGHT;
+    framebufferRef.current = canvas;
+  }
+
   if (!drawingRef.current) {
     const canvas = document.createElement("canvas");
-    canvas.width = 432;
-    canvas.height = 290;
+    canvas.width = PAINT_CANVAS_WIDTH;
+    canvas.height = PAINT_CANVAS_HEIGHT;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.fillStyle = "#ffffff";
@@ -283,29 +324,57 @@ export default function CanvasComputer() {
   }
 
   useEffect(() => {
+    function resize() {
+      setLayout(
+        calculateCanvasComputerLayout({
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+        })
+      );
+    }
+
+    window.addEventListener("resize", resize);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  useEffect(() => {
     let animationFrame = 0;
     let lastFrame = performance.now();
 
     function draw(now: number) {
       if (now - lastFrame >= 1000 / 30) {
         lastFrame = now;
-        const canvas = screenRef.current;
+        const screenCanvas = screenRef.current;
+        const framebuffer = framebufferRef.current;
         const drawingCanvas = drawingRef.current;
-        if (canvas && drawingCanvas) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.imageSmoothingEnabled = false;
-            ctx.clearRect(0, 0, CANVAS_COMPUTER_WIDTH, CANVAS_COMPUTER_HEIGHT);
-            drawDither(ctx);
+        if (screenCanvas && framebuffer && drawingCanvas) {
+          const framebufferCtx = framebuffer.getContext("2d");
+          const screenCtx = screenCanvas.getContext("2d");
+          if (framebufferCtx && screenCtx) {
+            framebufferCtx.imageSmoothingEnabled = false;
+            framebufferCtx.clearRect(
+              0,
+              0,
+              CANVAS_COMPUTER_WIDTH,
+              CANVAS_COMPUTER_HEIGHT
+            );
+            drawDither(framebufferCtx);
             for (const win of windows) {
-              drawWindow(ctx, win);
+              drawWindow(framebufferCtx, win);
               if (win.id === "tools") {
-                drawTools(ctx, win);
+                drawTools(framebufferCtx, win);
               } else if (win.id === "paint") {
-                drawPaintCanvas(ctx, win, drawingCanvas);
+                drawPaintCanvas(framebufferCtx, win, drawingCanvas);
               }
             }
-            drawMenuBar(ctx, activeMenu);
+            drawMenuBar(framebufferCtx, activeMenu);
+
+            screenCtx.imageSmoothingEnabled = false;
+            screenCtx.clearRect(0, 0, layout.width, layout.height);
+            screenCtx.drawImage(framebuffer, 0, 0, layout.width, layout.height);
           }
         }
       }
@@ -317,7 +386,7 @@ export default function CanvasComputer() {
     return () => {
       window.cancelAnimationFrame(animationFrame);
     };
-  }, [activeMenu, windows]);
+  }, [activeMenu, layout.height, layout.width, windows]);
 
   function getPoint(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = screenRef.current;
@@ -336,7 +405,9 @@ export default function CanvasComputer() {
   function getDrawingPoint(point: Point, paintWindow: CanvasWindow) {
     const x = point.x - (paintWindow.x + 4);
     const y = point.y - (paintWindow.y + 24);
-    if (x < 0 || y < 0 || x >= 432 || y >= 290) return null;
+    if (x < 0 || y < 0 || x >= PAINT_CANVAS_WIDTH || y >= PAINT_CANVAS_HEIGHT) {
+      return null;
+    }
     return { x, y };
   }
 
@@ -356,8 +427,8 @@ export default function CanvasComputer() {
     if (paintWindow && rectContains(point, {
       x: paintWindow.x + 4,
       y: paintWindow.y + 24,
-      width: 432,
-      height: 290,
+      width: PAINT_CANVAS_WIDTH,
+      height: PAINT_CANVAS_HEIGHT,
     })) {
       drawingPointerRef.current = getDrawingPoint(point, paintWindow);
       return;
@@ -396,10 +467,11 @@ export default function CanvasComputer() {
 
     const paintWindow = getPaintWindow();
     if (drawingPointerRef.current && paintWindow) {
-      const nextPoint = getDrawingPoint(point, paintWindow) ?? clampDrawingPoint({
-        x: point.x - (paintWindow.x + 4),
-        y: point.y - (paintWindow.y + 24),
-      });
+      const nextPoint = getDrawingPoint(point, paintWindow);
+      if (!nextPoint) {
+        drawingPointerRef.current = null;
+        return;
+      }
       drawLineOnCanvas(
         drawingRef.current!,
         drawingPointerRef.current,
@@ -417,11 +489,13 @@ export default function CanvasComputer() {
 
   return (
     <Shell>
-      <Monitor>
+      <Monitor screenWidth={layout.width} screenHeight={layout.height}>
         <Screen
           ref={screenRef}
-          width={CANVAS_COMPUTER_WIDTH}
-          height={CANVAS_COMPUTER_HEIGHT}
+          width={layout.width}
+          height={layout.height}
+          screenWidth={layout.width}
+          screenHeight={layout.height}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={stopPointer}
