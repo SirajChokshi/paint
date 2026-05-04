@@ -59,8 +59,10 @@ export default function PixelCanvasRenderer() {
       window.mode = "line";
     }
 
-    const maxWidthFromWidth = window.innerWidth - 205;
-    const maxWidthFromHeight = (window.innerHeight * 0.85 * 3) / 2;
+    const screenWidth = window.virtualScreenWidth ?? window.innerWidth;
+    const screenHeight = window.virtualScreenHeight ?? window.innerHeight;
+    const maxWidthFromWidth = screenWidth - 205;
+    const maxWidthFromHeight = (screenHeight * 0.85 * 3) / 2;
     const maxWidth = Math.max(
       100,
       Math.floor(Math.min(maxWidthFromWidth, maxWidthFromHeight))

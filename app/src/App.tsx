@@ -5,6 +5,7 @@ import PixelCanvasRenderer from "./components/core/Canvas";
 import Desktop from "./components/core/Desktop";
 import Menubar from "./components/core/Menubar";
 import Tools from "./components/core/Tools";
+import VirtualScreen from "./components/core/VirtualScreen";
 import Window from "./components/Window";
 import { AboutWindow } from "./components/windows/about-window";
 import { useWindowStore } from "./stores/windowStore";
@@ -28,34 +29,41 @@ function App() {
       sensors={[mouseSensor]}
       modifiers={[restrictToParentElement]}
       onDragEnd={({ delta, active: { id } }) => {
-        moveWindow(id as string, delta);
+        const scale = window.virtualScreenScale ?? 1;
+
+        moveWindow(id as string, {
+          x: delta.x / scale,
+          y: delta.y / scale,
+        });
       }}
     >
-      <Menubar />
-      <main>
-        <Desktop />
-        <Window
-          title="Tools"
-          id={WINDOW_IDS.tools}
-          defaultPosition={{
-            x: 15,
-            y: 15,
-          }}
-        >
-          <Tools />
-        </Window>
-        <Window
-          title="Untitled"
-          id={WINDOW_IDS.canvas}
-          defaultPosition={{
-            x: 180,
-            y: 15,
-          }}
-        >
-          <PixelCanvasRenderer />
-        </Window>
-        <AboutWindow />
-      </main>
+      <VirtualScreen>
+        <Menubar />
+        <main>
+          <Desktop />
+          <Window
+            title="Tools"
+            id={WINDOW_IDS.tools}
+            defaultPosition={{
+              x: 15,
+              y: 15,
+            }}
+          >
+            <Tools />
+          </Window>
+          <Window
+            title="Untitled"
+            id={WINDOW_IDS.canvas}
+            defaultPosition={{
+              x: 180,
+              y: 15,
+            }}
+          >
+            <PixelCanvasRenderer />
+          </Window>
+          <AboutWindow />
+        </main>
+      </VirtualScreen>
     </DndContext>
   );
 }

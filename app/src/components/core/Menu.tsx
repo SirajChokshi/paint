@@ -57,7 +57,7 @@ export function Menu(props: MenuProps) {
   return (
     <Root>
       <Trigger asChild>{props.children}</Trigger>
-      <DropdownMenu.Portal>
+      <DropdownMenu.Portal container={document.getElementById("virtual-screen")}>
         <Content
           align="start"
           side={props.side ?? "bottom"}

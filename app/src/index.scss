@@ -66,10 +66,9 @@ html {
 
 body {
   margin: 0;
-  display: grid;
+  min-width: 100vw;
   height: 100%;
-  grid-template-columns: 1fr;
-  grid-template-rows: min-content 1fr;
+  background: #141414;
 }
 
 main {
