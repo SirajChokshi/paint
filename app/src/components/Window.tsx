@@ -186,7 +186,7 @@ export default function Window({
           x: event.clientX,
           y: event.clientY,
         },
-        scale: 1,
+        scale: window.virtualScreenScale ?? 1,
       })
     );
   }

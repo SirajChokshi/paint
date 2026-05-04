@@ -64,6 +64,20 @@ describe("calculateDragPosition", () => {
       y: 35,
     });
   });
+
+  it("keeps the grabbed point under the pointer at 2x screen scale", () => {
+    expect(
+      calculateDragPosition({
+        startPosition: { x: 14, y: 12 },
+        startPointer: { x: 300, y: 240 },
+        currentPointer: { x: 368, y: 290 },
+        scale: 2,
+      })
+    ).toEqual({
+      x: 48,
+      y: 37,
+    });
+  });
 });
 
 describe("mapViewportPointToVirtualScreen", () => {
