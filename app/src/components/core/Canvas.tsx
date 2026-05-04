@@ -2,18 +2,21 @@ import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { PixelCanvas } from "pixel-paint";
 import { calculateCanvasPoint, snapPointToGrid } from "../../lib/virtualScreen";
+import { usePaintStore } from "../../stores/paintStore";
 
 const BRUSH_SIZE = 5;
 
 const CanvasWrapper = styled.div`
   background: var(--mac-white);
-  padding: 2px;
+  padding: 6px;
 `;
 
 const CanvasInset = styled.div`
   border: 1px solid var(--mac-black);
   line-height: 0;
   position: relative;
+  overflow: hidden;
+  width: min-content;
 
   .brush-cursor {
     position: absolute;
@@ -40,6 +43,7 @@ const StyledCanvas = styled.canvas`
   image-rendering: crisp-edges;
   display: block;
   cursor: none;
+  position: relative;
 `;
 
 interface Point {
@@ -66,6 +70,7 @@ export default function PixelCanvasRenderer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
   const points = useRef<Point[]>([]);
+  const selectedColor = usePaintStore((state) => state.selectedColor);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
   const [cursorPoint, setCursorPoint] = useState<Point | null>(null);
@@ -83,8 +88,8 @@ export default function PixelCanvasRenderer() {
 
     const screenWidth = window.virtualScreenWidth ?? window.innerWidth;
     const screenHeight = window.virtualScreenHeight ?? window.innerHeight;
-    const maxWidthFromWidth = screenWidth - 205;
-    const maxWidthFromHeight = (screenHeight * 0.85 * 3) / 2;
+    const maxWidthFromWidth = screenWidth - 155;
+    const maxWidthFromHeight = ((screenHeight - 42) * 3) / 2;
     const maxWidth = Math.max(
       100,
       Math.floor(Math.min(maxWidthFromWidth, maxWidthFromHeight))
@@ -99,6 +104,12 @@ export default function PixelCanvasRenderer() {
     setPa(pixelArt);
     window.pixel = pixelArt;
   }, []);
+
+  useEffect(() => {
+    if (!pa) return;
+
+    pa.color = selectedColor;
+  }, [pa, selectedColor]);
 
   function stopDrawing() {
     isDrawing.current = false;

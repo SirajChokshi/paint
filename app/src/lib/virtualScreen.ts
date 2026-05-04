@@ -4,6 +4,8 @@ export const VIRTUAL_SCREEN_HEIGHT = 480;
 export interface VirtualScreenLayoutInput {
   viewportWidth: number;
   viewportHeight: number;
+  width?: number;
+  height?: number;
 }
 
 export interface VirtualScreenLayout {
@@ -44,6 +46,8 @@ export interface DragPositionInput {
 export interface VirtualPointerInput {
   clientX: number;
   clientY: number;
+  width?: number;
+  height?: number;
   rect: {
     left: number;
     top: number;
@@ -55,22 +59,24 @@ export interface VirtualPointerInput {
 export function calculateVirtualScreenLayout({
   viewportWidth,
   viewportHeight,
+  width = VIRTUAL_SCREEN_WIDTH,
+  height = VIRTUAL_SCREEN_HEIGHT,
 }: VirtualScreenLayoutInput): VirtualScreenLayout {
   const scale = Math.max(
     1,
     Math.floor(
       Math.min(
-        viewportWidth / VIRTUAL_SCREEN_WIDTH,
-        viewportHeight / VIRTUAL_SCREEN_HEIGHT
+        viewportWidth / width,
+        viewportHeight / height
       )
     )
   );
-  const scaledWidth = VIRTUAL_SCREEN_WIDTH * scale;
-  const scaledHeight = VIRTUAL_SCREEN_HEIGHT * scale;
+  const scaledWidth = width * scale;
+  const scaledHeight = height * scale;
 
   return {
-    width: VIRTUAL_SCREEN_WIDTH,
-    height: VIRTUAL_SCREEN_HEIGHT,
+    width,
+    height,
     scale,
     scaledWidth,
     scaledHeight,
@@ -109,11 +115,13 @@ export function calculateDragPosition({
 export function mapViewportPointToVirtualScreen({
   clientX,
   clientY,
+  width = VIRTUAL_SCREEN_WIDTH,
+  height = VIRTUAL_SCREEN_HEIGHT,
   rect,
 }: VirtualPointerInput): Point {
   return {
-    x: Math.round(((clientX - rect.left) / rect.width) * VIRTUAL_SCREEN_WIDTH),
-    y: Math.round(((clientY - rect.top) / rect.height) * VIRTUAL_SCREEN_HEIGHT),
+    x: Math.round(((clientX - rect.left) / rect.width) * width),
+    y: Math.round(((clientY - rect.top) / rect.height) * height),
   };
 }
 

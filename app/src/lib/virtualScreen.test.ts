@@ -1,31 +1,31 @@
 import { describe, expect, it } from "vitest";
 import {
-  VIRTUAL_SCREEN_HEIGHT,
-  VIRTUAL_SCREEN_WIDTH,
   calculateCanvasPoint,
   calculateDragPosition,
+  calculateVirtualScreenLayout,
   mapViewportPointToVirtualScreen,
   pointsBetween,
   calculateScaledDelta,
   snapPointToGrid,
-  calculateVirtualScreenLayout,
 } from "./virtualScreen";
 
 describe("calculateVirtualScreenLayout", () => {
-  it("uses integer scaling and centers the virtual screen", () => {
+  it("uses integer scaling for any requested resolution", () => {
     const layout = calculateVirtualScreenLayout({
-      viewportWidth: 1600,
-      viewportHeight: 1000,
+      viewportWidth: 1440,
+      viewportHeight: 960,
+      width: 512,
+      height: 342,
     });
 
     expect(layout).toEqual({
-      width: VIRTUAL_SCREEN_WIDTH,
-      height: VIRTUAL_SCREEN_HEIGHT,
+      width: 512,
+      height: 342,
       scale: 2,
-      scaledWidth: VIRTUAL_SCREEN_WIDTH * 2,
-      scaledHeight: VIRTUAL_SCREEN_HEIGHT * 2,
-      offsetX: 160,
-      offsetY: 20,
+      scaledWidth: 1024,
+      scaledHeight: 684,
+      offsetX: 208,
+      offsetY: 138,
     });
   });
 
@@ -34,6 +34,8 @@ describe("calculateVirtualScreenLayout", () => {
       calculateVirtualScreenLayout({
         viewportWidth: 320,
         viewportHeight: 240,
+        width: 512,
+        height: 342,
       }).scale
     ).toBe(1);
   });
@@ -70,11 +72,13 @@ describe("mapViewportPointToVirtualScreen", () => {
       mapViewportPointToVirtualScreen({
         clientX: 500,
         clientY: 300,
+        width: 512,
+        height: 342,
         rect: {
           left: 180,
           top: 60,
-          width: 1280,
-          height: 960,
+          width: 1024,
+          height: 684,
         },
       })
     ).toEqual({

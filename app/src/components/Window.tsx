@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { PropsWithChildren, useEffect, useRef } from "react";
+import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import { v4 } from "uuid";
 import { Position, useWindowStore } from "../stores/windowStore";
 import { calculateDragPosition } from "../lib/virtualScreen";
@@ -126,6 +126,7 @@ export default function Window({
     position: Position;
     pointer: Position;
   } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const {
     getWindow,
@@ -167,6 +168,7 @@ export default function Window({
         y: event.clientY,
       },
     };
+    setIsDragging(true);
     touchWindow(id.current);
     windowRef.current?.setPointerCapture(event.pointerId);
   }
@@ -191,6 +193,7 @@ export default function Window({
 
   function stopDrag(event: React.PointerEvent) {
     dragRef.current = null;
+    setIsDragging(false);
     if (windowRef.current?.hasPointerCapture(event.pointerId)) {
       windowRef.current.releasePointerCapture(event.pointerId);
     }
@@ -205,7 +208,7 @@ export default function Window({
       className="window"
       left={position.x}
       top={position.y}
-      z={alwaysOnTop ? 9999 : getStackOrder(id.current) + 99}
+      z={alwaysOnTop ? 9999 : isDragging ? 9998 : getStackOrder(id.current) + 99}
       allDraggable={!title || dragFromBody === true}
       onPointerMove={drag}
       onPointerUp={stopDrag}

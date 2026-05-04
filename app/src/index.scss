@@ -51,6 +51,7 @@
   user-select: none;
   box-sizing: border-box;
   image-rendering: pixelated;
+  text-rendering: geometricPrecision;
 }
 
 html,
@@ -73,9 +74,15 @@ body {
 
 main {
   position: relative;
-  width: 640px;
-  height: calc(480px - 21px);
+  width: var(--virtual-screen-width, 640px);
+  height: calc(var(--virtual-screen-height, 480px) - 21px);
   overflow: hidden;
+}
+
+.virtual-screen__content {
+  font-smooth: never;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font {
