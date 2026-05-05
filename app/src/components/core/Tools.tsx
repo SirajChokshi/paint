@@ -2,14 +2,14 @@ import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
 import { usePaintStore } from "../../stores/paintStore";
 
-type DrawMode = "line" | "fill";
-type Tool = "pencil" | "line" | "fill" | "erase";
+export type DrawMode = "pencil" | "line" | "fill";
+type Tool = DrawMode | "erase";
 
 const TOOL_TO_MODE: Record<Tool, DrawMode> = {
-  pencil: "line",
+  pencil: "pencil",
   line: "line",
   fill: "fill",
-  erase: "line",
+  erase: "pencil",
 };
 
 const ToolGrid = styled.div`
@@ -272,11 +272,20 @@ const COLORS = [
 
 export default function Tools() {
   const [tool, setTool] = useState<Tool>("pencil");
-  const { selectedColor, setSelectedColor } = usePaintStore();
+  const { selectedColor, setSelectedColor, toolMode, setToolMode: setStoreToolMode } = usePaintStore();
 
   useEffect(() => {
-    window.mode = TOOL_TO_MODE[tool];
-  }, [tool]);
+    setTool((currentTool) => {
+      if (currentTool === "erase") return currentTool;
+
+      return currentTool === toolMode ? currentTool : toolMode;
+    });
+  }, [toolMode]);
+
+  function setToolMode(t: Tool) {
+    setStoreToolMode(TOOL_TO_MODE[t]);
+    setTool(t);
+  }
 
   function setColor(color: string) {
     setSelectedColor(color);
@@ -285,7 +294,7 @@ export default function Tools() {
   }
 
   function selectTool(t: Tool) {
-    setTool(t);
+    setToolMode(t);
     if (t === "erase") {
       setColor("#ffffff");
     } else if (t === "pencil") {
@@ -346,7 +355,7 @@ export default function Tools() {
             onClick={() => {
               setColor(color);
               if (tool === "erase") {
-                setTool("pencil");
+                setToolMode("pencil");
               }
             }}
           />

@@ -70,6 +70,7 @@ export default function PixelCanvasRenderer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
   const points = useRef<Point[]>([]);
+  const linePreviewSnapshot = useRef<ImageData | null>(null);
   const selectedColor = usePaintStore((state) => state.selectedColor);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
@@ -81,10 +82,6 @@ export default function PixelCanvasRenderer() {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    if (window.mode === undefined) {
-      window.mode = "line";
-    }
 
     const screenWidth = window.virtualScreenWidth ?? window.innerWidth;
     const screenHeight = window.virtualScreenHeight ?? window.innerHeight;
@@ -114,6 +111,22 @@ export default function PixelCanvasRenderer() {
   function stopDrawing() {
     isDrawing.current = false;
     points.current.length = 0;
+    linePreviewSnapshot.current = null;
+  }
+
+  function finishLine(point: Point) {
+    if (!pa) return;
+
+    const startPoint = points.current[0];
+    const snapshot = linePreviewSnapshot.current;
+    if (!startPoint || !snapshot) {
+      stopDrawing();
+      return;
+    }
+
+    pa.renderer.putImageData(snapshot, 0, 0);
+    drawSegment(startPoint, point);
+    stopDrawing();
   }
 
   function drawSegment(from: Point, to: Point) {
@@ -125,7 +138,11 @@ export default function PixelCanvasRenderer() {
     pa.stroke();
   }
 
-  function moveCursor(e: React.MouseEvent<HTMLCanvasElement>) {
+  function getActiveTool() {
+    return usePaintStore.getState().toolMode;
+  }
+
+  function moveCursor(e: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
@@ -141,13 +158,15 @@ export default function PixelCanvasRenderer() {
       <CanvasInset>
         <StyledCanvas
           ref={canvasRef}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             if (!pa) return;
 
             const point = moveCursor(e);
             if (!point) return;
+            e.currentTarget.setPointerCapture(e.pointerId);
+            const tool = getActiveTool();
 
-            if (window.mode === "fill") {
+            if (tool === "fill") {
               pa.fill(point.x, point.y);
               stopDrawing();
               return;
@@ -155,10 +174,36 @@ export default function PixelCanvasRenderer() {
 
             isDrawing.current = true;
             points.current = [point];
+            linePreviewSnapshot.current =
+              tool === "line"
+                ? pa.renderer.getImageData(
+                    0,
+                    0,
+                    pa.renderer.canvas.width,
+                    pa.renderer.canvas.height
+                  )
+                : null;
             drawSegment(point, point);
           }}
-          onMouseUp={stopDrawing}
-          onMouseLeave={() => {
+          onPointerUp={(e) => {
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            }
+            const tool = getActiveTool();
+            if (tool !== "line" || !isDrawing.current) {
+              stopDrawing();
+              return;
+            }
+
+            const point = moveCursor(e);
+            if (!point) {
+              stopDrawing();
+              return;
+            }
+
+            finishLine(point);
+          }}
+          onPointerLeave={() => {
             setCursorPoint(null);
             stopDrawing();
           }}
@@ -166,15 +211,27 @@ export default function PixelCanvasRenderer() {
             e.preventDefault();
             stopDrawing();
           }}
-          onMouseMove={(e) => {
+          onPointerMove={(e) => {
             if (!pa) return;
 
             const point = moveCursor(e);
             if (!point) return;
             if (!isDrawing.current) return;
+            const tool = getActiveTool();
 
             const previousPoint = points.current[points.current.length - 1];
             if (!previousPoint) return;
+
+            if (tool === "line") {
+              const startPoint = points.current[0];
+              const snapshot = linePreviewSnapshot.current;
+              if (!startPoint || !snapshot) return;
+
+              pa.renderer.putImageData(snapshot, 0, 0);
+              drawSegment(startPoint, point);
+              points.current = [startPoint, point];
+              return;
+            }
 
             points.current.push(point);
             drawSegment(previousPoint, point);
