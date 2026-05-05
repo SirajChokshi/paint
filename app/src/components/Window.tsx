@@ -157,8 +157,18 @@ export default function Window({
 
   const { position } = maybeWindow;
 
+  function isInteractiveDragTarget(target: EventTarget | null) {
+    return (
+      target instanceof HTMLElement &&
+      target.closest("button, a, input, select, textarea, [role='button']") !==
+        null
+    );
+  }
+
   function startDrag(event: React.PointerEvent) {
     if (event.button !== 0) return;
+    if (isInteractiveDragTarget(event.target)) return;
+
     event.preventDefault();
 
     dragRef.current = {
@@ -223,6 +233,7 @@ export default function Window({
           </div>
           <button
             className="window__close-box"
+            onPointerDown={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
