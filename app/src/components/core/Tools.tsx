@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
-import { PAINT_APP_PALETTE } from "../../lib/palette";
+import { getPaintPalette } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
 
 export type DrawMode = "pencil" | "line" | "fill";
@@ -254,7 +254,14 @@ const ColorGrid = styled.div`
 
 export default function Tools() {
   const [tool, setTool] = useState<Tool>("pencil");
-  const { selectedColor, setSelectedColor, toolMode, setToolMode: setStoreToolMode } = usePaintStore();
+  const {
+    paletteId,
+    selectedColor,
+    setSelectedColor,
+    toolMode,
+    setToolMode: setStoreToolMode,
+  } = usePaintStore();
+  const palette = getPaintPalette(paletteId);
 
   useEffect(() => {
     setTool((currentTool) => {
@@ -327,7 +334,7 @@ export default function Tools() {
         </FgBgPreview>
       </FgBgSection>
       <ColorGrid>
-        {PAINT_APP_PALETTE.map((color) => (
+        {palette.map((color) => (
           <ColorSwatch
             key={color}
             swatchColor={color}

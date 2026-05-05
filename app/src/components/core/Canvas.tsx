@@ -9,7 +9,7 @@ import {
   PAINT_APP_VIRTUAL_SCREEN_WIDTH,
   snapPointToGrid,
 } from "../../lib/virtualScreen";
-import { PAINT_APP_PALETTE } from "../../lib/palette";
+import { getPaintPalette } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
 
 const BRUSH_SIZE = 5;
@@ -80,6 +80,7 @@ export default function PixelCanvasRenderer() {
   const isDrawing = useRef(false);
   const points = useRef<Point[]>([]);
   const linePreviewSnapshot = useRef<ImageData | null>(null);
+  const paletteId = usePaintStore((state) => state.paletteId);
   const selectedColor = usePaintStore((state) => state.selectedColor);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
@@ -115,7 +116,7 @@ export default function PixelCanvasRenderer() {
 
       const pixelArt = new PixelCanvas(ctx!, {
         pixelSize: PAINT_APP_CANVAS_PIXEL_SIZE,
-        palette: PAINT_APP_PALETTE,
+        palette: getPaintPalette(usePaintStore.getState().paletteId),
       });
 
       pixelCanvasRef.current = pixelArt;
@@ -134,6 +135,12 @@ export default function PixelCanvasRenderer() {
 
     pa.color = selectedColor;
   }, [pa, selectedColor]);
+
+  useEffect(() => {
+    if (!pa) return;
+
+    pa.palette = getPaintPalette(paletteId);
+  }, [pa, paletteId]);
 
   function stopDrawing() {
     isDrawing.current = false;

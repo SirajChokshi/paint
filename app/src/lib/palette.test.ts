@@ -1,8 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { quantizeImageDataToPalette } from "pixel-paint";
-import { PAINT_APP_PALETTE, quantizeToPaintPalette } from "./palette";
+import {
+  DEFAULT_PAINT_PALETTE_ID,
+  PAINT_APP_PALETTE,
+  PAINT_APP_PALETTE_IDS,
+  PAINT_APP_PALETTES,
+  quantizeToPaintPalette,
+} from "./palette";
 
 describe("PAINT_APP_PALETTE", () => {
+  it("defines four named 16-color palettes", () => {
+    expect(DEFAULT_PAINT_PALETTE_ID).toBe("toybox");
+    expect(PAINT_APP_PALETTE_IDS).toEqual([
+      "toybox",
+      "watercolor",
+      "arcade",
+      "systemGarden",
+    ]);
+
+    for (const id of PAINT_APP_PALETTE_IDS) {
+      const palette = PAINT_APP_PALETTES[id];
+      expect(palette.name).toBeTruthy();
+      expect(palette.colors).toHaveLength(16);
+      expect(new Set(palette.colors).size).toBe(16);
+      expect(palette.colors).toContain("#000000");
+      expect(palette.colors).toContain("#ffffff");
+    }
+  });
+
   it("maps arbitrary colors to the canonical paint palette", () => {
     expect(PAINT_APP_PALETTE).toHaveLength(16);
     expect(quantizeToPaintPalette("#fdfdfd")).toBe("#ffffff");

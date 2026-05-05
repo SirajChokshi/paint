@@ -5,6 +5,8 @@ import { FrameBus } from "../../lib/frame";
 import { Menu } from "./Menu";
 import { useWindowStore } from "../../stores/windowStore";
 import { WINDOW_IDS } from "../../App";
+import { PAINT_APP_PALETTE_IDS, PAINT_APP_PALETTES } from "../../lib/palette";
+import { usePaintStore } from "../../stores/paintStore";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   display: flex;
@@ -40,6 +42,7 @@ const MenubarWrapper = styled(Toolbar.Root)`
 export default function Menubar() {
   const { addWindow, getWindow, removeWindow } = useWindowStore();
   const { save, files } = useFileStore();
+  const { paletteId, setPaletteId } = usePaintStore();
 
   return (
     <MenubarWrapper className="font-sm">
@@ -59,7 +62,15 @@ export default function Menubar() {
           },
           {
             name: "Preferences",
-            onClick: () => {},
+            items: [
+              {
+                name: "Palette",
+                items: PAINT_APP_PALETTE_IDS.map((id) => ({
+                  name: `${paletteId === id ? "✓" : " "} ${PAINT_APP_PALETTES[id].name}`,
+                  onClick: () => setPaletteId(id),
+                })),
+              },
+            ],
           },
           {
             name: "Quit",
