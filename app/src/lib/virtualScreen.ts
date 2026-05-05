@@ -43,20 +43,27 @@ export interface DragPositionInput {
   scale: number;
 }
 
+/** Uniform scale that fits logical size inside the viewport (CSS object-fit: contain). */
+export function calculateVirtualScreenFitScale(
+  viewportWidth: number,
+  viewportHeight: number,
+  width: number,
+  height: number
+): number {
+  return Math.min(viewportWidth / width, viewportHeight / height);
+}
+
 export function calculateVirtualScreenLayout({
   viewportWidth,
   viewportHeight,
   width = VIRTUAL_SCREEN_WIDTH,
   height = VIRTUAL_SCREEN_HEIGHT,
 }: VirtualScreenLayoutInput): VirtualScreenLayout {
-  const scale = Math.max(
-    1,
-    Math.floor(
-      Math.min(
-        viewportWidth / width,
-        viewportHeight / height
-      )
-    )
+  const scale = calculateVirtualScreenFitScale(
+    viewportWidth,
+    viewportHeight,
+    width,
+    height
   );
   const scaledWidth = width * scale;
   const scaledHeight = height * scale;
@@ -67,8 +74,8 @@ export function calculateVirtualScreenLayout({
     scale,
     scaledWidth,
     scaledHeight,
-    offsetX: Math.floor((viewportWidth - scaledWidth) / 2),
-    offsetY: Math.floor((viewportHeight - scaledHeight) / 2),
+    offsetX: (viewportWidth - scaledWidth) / 2,
+    offsetY: (viewportHeight - scaledHeight) / 2,
   };
 }
 
