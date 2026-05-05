@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
+import { getPaintPalette } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
 
 export type DrawMode = "pencil" | "line" | "fill";
@@ -251,28 +252,18 @@ const ColorGrid = styled.div`
   background: var(--mac-white);
 `;
 
-const COLORS = [
-  "#000000",
-  "#333333",
-  "#777777",
-  "#ffffff",
-  "#880000",
-  "#ff0000",
-  "#cc6600",
-  "#ffff00",
-  "#006600",
-  "#00ff00",
-  "#006666",
-  "#00ffff",
-  "#003366",
-  "#0000ff",
-  "#663300",
-  "#aa00aa",
-];
-
 export default function Tools() {
   const [tool, setTool] = useState<Tool>("pencil");
-  const { selectedColor, setSelectedColor, toolMode, setToolMode: setStoreToolMode } = usePaintStore();
+  const {
+    paletteId,
+    selectedColor,
+    selectedColorIndex,
+    setSelectedColor,
+    setSelectedColorIndex,
+    toolMode,
+    setToolMode: setStoreToolMode,
+  } = usePaintStore();
+  const palette = getPaintPalette(paletteId);
 
   useEffect(() => {
     setTool((currentTool) => {
@@ -345,15 +336,18 @@ export default function Tools() {
         </FgBgPreview>
       </FgBgSection>
       <ColorGrid>
-        {COLORS.map((color) => (
+        {palette.map((color, colorIndex) => (
           <ColorSwatch
             key={color}
             swatchColor={color}
-            isSelected={selectedColor === color && tool !== "erase"}
+            isSelected={selectedColorIndex === colorIndex && tool !== "erase"}
             aria-label={`Set drawing color to ${color}`}
             title={color}
             onClick={() => {
-              setColor(color);
+              setSelectedColorIndex(colorIndex);
+              if (window.pixel) {
+                window.pixel.color = color;
+              }
               if (tool === "erase") {
                 setToolMode("pencil");
               }

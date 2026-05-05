@@ -1,4 +1,22 @@
-import { rgbFromHex } from "./color.util";
+import {
+  getClosestPaletteColor,
+  normalizeHexColor,
+  quantizeImageDataToPalette,
+  rgbFromHex,
+} from "./palette";
+import type { Palette } from "./palette";
+
+function shouldUseAnonymousCors(source: string): boolean {
+  return /^https?:\/\//i.test(source);
+}
+
+export interface PixelCanvasImportOptions {
+  resolution?: "logical" | "renderer";
+}
+
+export interface PixelCanvasSetPaletteOptions {
+  remap?: boolean;
+}
 
 export class PixelCanvas {
   cursor: {
@@ -9,6 +27,7 @@ export class PixelCanvas {
   renderer: CanvasRenderingContext2D;
   ctx: CanvasRenderingContext2D;
   pixelSize: number = 10;
+  palette: Palette = [];
 
   // @ts-ignore
   image: ImageData;
@@ -18,6 +37,7 @@ export class PixelCanvas {
     ctx: CanvasRenderingContext2D,
     options: {
       pixelSize?: number;
+      palette?: Palette;
     } = {}
   ) {
     this.cursor = {
@@ -27,9 +47,63 @@ export class PixelCanvas {
     this.color = "#000000";
     this.renderer = ctx;
     this.ctx = document.createElement("canvas").getContext("2d")!;
+    this.palette = options.palette ?? [];
     this.setPixelSize(options?.pixelSize ?? 10);
 
     this.clear();
+  }
+
+  setPalette(palette: Palette, options: PixelCanvasSetPaletteOptions = {}) {
+    const previousPalette = this.palette;
+    this.palette = palette;
+
+    if (options.remap === true) {
+      this.remapContextPalette(this.renderer, previousPalette, palette);
+      this.remapContextPalette(this.ctx, previousPalette, palette);
+    }
+  }
+
+  private remapContextPalette(
+    context: CanvasRenderingContext2D,
+    previousPalette: Palette,
+    nextPalette: Palette
+  ) {
+    const width = context.canvas.width;
+    const height = context.canvas.height;
+    if (width <= 0 || height <= 0 || previousPalette.length === 0) {
+      return;
+    }
+
+    const previousColors = previousPalette.map((color) =>
+      normalizeHexColor(color)
+    );
+    const image = context.getImageData(0, 0, width, height);
+    const data = image.data;
+
+    for (let index = 0; index < data.length; index += 4) {
+      if (data[index + 3] === 0) {
+        continue;
+      }
+
+      const previousColor = getClosestPaletteColor(
+        {
+          r: data[index],
+          g: data[index + 1],
+          b: data[index + 2],
+        },
+        previousPalette
+      );
+      const slot = previousColors.indexOf(previousColor);
+      const nextColor = normalizeHexColor(nextPalette[slot] ?? "") ?? previousColor;
+      const rgb = rgbFromHex(nextColor);
+
+      data[index] = rgb.r;
+      data[index + 1] = rgb.g;
+      data[index + 2] = rgb.b;
+      data[index + 3] = 255;
+    }
+
+    context.putImageData(image, 0, 0);
   }
 
   setPixelSize(pixelSize: number) {
@@ -207,11 +281,67 @@ export class PixelCanvas {
     return this.renderer.canvas.toDataURL();
   }
 
-  import(data: string, scale = 1) {
+  import(data: string, options: PixelCanvasImportOptions = {}) {
     const img = new Image();
-    img.src = data;
+    if (shouldUseAnonymousCors(data)) {
+      img.crossOrigin = "anonymous";
+    }
+
     img.onload = () => {
-      this.renderer.drawImage(img, 0, 0, img.width * scale, img.height * scale);
+      const renderer = this.renderer;
+      const resolution = options.resolution ?? "logical";
+      const target = resolution === "renderer" ? renderer : this.ctx;
+      const width = target.canvas.width;
+      const height = target.canvas.height;
+      if (width <= 0 || height <= 0) {
+        return;
+      }
+
+      const previousFillStyle = target.fillStyle;
+      const targetSmoothing = target.imageSmoothingEnabled;
+
+      try {
+        target.fillStyle = "#ffffff";
+        target.fillRect(0, 0, width, height);
+
+        const scale = Math.min(
+          width / img.width,
+          height / img.height,
+        );
+        const drawWidth = Math.max(1, Math.floor(img.width * scale));
+        const drawHeight = Math.max(1, Math.floor(img.height * scale));
+        const offsetX = Math.floor((width - drawWidth) / 2);
+        const offsetY = Math.floor((height - drawHeight) / 2);
+
+        target.imageSmoothingEnabled = false;
+        target.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+        const imported = quantizeImageDataToPalette(
+          target.getImageData(0, 0, width, height),
+          this.palette,
+        );
+        target.putImageData(imported, 0, 0);
+
+        if (resolution === "logical") {
+          this.image = imported;
+          this.data = new Uint32Array(imported.data.buffer);
+
+          const rendererSmoothing = renderer.imageSmoothingEnabled;
+          renderer.imageSmoothingEnabled = false;
+          renderer.drawImage(
+            target.canvas,
+            0,
+            0,
+            renderer.canvas.width,
+            renderer.canvas.height,
+          );
+          renderer.imageSmoothingEnabled = rendererSmoothing;
+        }
+      } finally {
+        target.imageSmoothingEnabled = targetSmoothing;
+        target.fillStyle = previousFillStyle;
+      }
     };
+    img.src = data;
   }
 }

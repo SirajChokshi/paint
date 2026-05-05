@@ -1,3 +1,5 @@
+import { PAINT_APP_PALETTE, quantizeToPaintPalette } from "./palette";
+
 export const CANVAS_COMPUTER_WIDTH = 512;
 export const CANVAS_COMPUTER_HEIGHT = 342;
 export const MENUBAR_HEIGHT = 21;
@@ -13,24 +15,7 @@ export const TOOL_PALETTE_OFFSET = {
 } as const;
 const MONITOR_EXTRA_WIDTH = 88;
 const MONITOR_EXTRA_HEIGHT = 96;
-export const INDEXED_16_COLOR_PALETTE = [
-  "#000000",
-  "#333333",
-  "#777777",
-  "#ffffff",
-  "#880000",
-  "#cc0000",
-  "#cc6600",
-  "#aa9900",
-  "#006600",
-  "#00aa00",
-  "#006666",
-  "#00aaaa",
-  "#003366",
-  "#0088ff",
-  "#663300",
-  "#aa00aa",
-] as const;
+export const INDEXED_16_COLOR_PALETTE = PAINT_APP_PALETTE;
 
 export type MenuId = "file" | "edit" | "view";
 
@@ -212,36 +197,6 @@ export function getPaletteIndexAtPoint({
   return index < colorCount ? index : null;
 }
 
-function parseHexChannel(value: string, start: number): number {
-  return Number.parseInt(value.slice(start, start + 2), 16);
-}
-
 export function quantizeToIndexedPalette(color: string): string {
-  const normalized = color.trim().toLowerCase();
-  if (!/^#[0-9a-f]{6}$/.test(normalized)) {
-    return "#000000";
-  }
-
-  const red = parseHexChannel(normalized, 1);
-  const green = parseHexChannel(normalized, 3);
-  const blue = parseHexChannel(normalized, 5);
-  let nearest: string = INDEXED_16_COLOR_PALETTE[0];
-  let nearestDistance = Number.POSITIVE_INFINITY;
-
-  for (const candidate of INDEXED_16_COLOR_PALETTE) {
-    const candidateRed = parseHexChannel(candidate, 1);
-    const candidateGreen = parseHexChannel(candidate, 3);
-    const candidateBlue = parseHexChannel(candidate, 5);
-    const distance =
-      (red - candidateRed) ** 2 +
-      (green - candidateGreen) ** 2 +
-      (blue - candidateBlue) ** 2;
-
-    if (distance < nearestDistance) {
-      nearest = candidate;
-      nearestDistance = distance;
-    }
-  }
-
-  return nearest;
+  return quantizeToPaintPalette(color);
 }

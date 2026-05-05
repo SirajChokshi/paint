@@ -12,6 +12,7 @@ import {
   getPaletteIndexAtPoint,
   screenPointToCanvasPoint,
 } from "./canvasComputer";
+import { PAINT_APP_PALETTE } from "./palette";
 
 describe("calculateCanvasComputerLayout", () => {
   it("uses the largest integer scale that fits the screen and monitor", () => {
@@ -107,16 +108,18 @@ describe("clampWindowPosition", () => {
 });
 
 describe("quantizeToIndexedPalette", () => {
-  it("uses a curated 16 color indexed paint palette", () => {
+  it("uses the shared 16 color indexed paint palette", () => {
+    expect(INDEXED_16_COLOR_PALETTE).toBe(PAINT_APP_PALETTE);
     expect(INDEXED_16_COLOR_PALETTE).toHaveLength(16);
     expect(new Set(INDEXED_16_COLOR_PALETTE).size).toBe(16);
     expect(INDEXED_16_COLOR_PALETTE).toContain("#000000");
     expect(INDEXED_16_COLOR_PALETTE).toContain("#ffffff");
-    expect(INDEXED_16_COLOR_PALETTE).toContain("#00aa00");
-    expect(INDEXED_16_COLOR_PALETTE).toContain("#0088ff");
-    expect(INDEXED_16_COLOR_PALETTE).toContain("#663300");
+    expect(INDEXED_16_COLOR_PALETTE).toContain("#5fd36f");
+    expect(INDEXED_16_COLOR_PALETTE).toContain("#5f8cff");
+    expect(INDEXED_16_COLOR_PALETTE).toContain("#9a6a3a");
     expect(quantizeToIndexedPalette("#fefefe")).toBe("#ffffff");
     expect(quantizeToIndexedPalette("#010101")).toBe("#000000");
+    expect(quantizeToIndexedPalette("#ee1208")).toBe("#e84646");
   });
 });
 

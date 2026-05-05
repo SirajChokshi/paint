@@ -1,7 +1,15 @@
 import styled from "@emotion/styled";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PixelCanvas } from "pixel-paint";
-import { calculateCanvasPoint, snapPointToGrid } from "../../lib/virtualScreen";
+import {
+  calculateCanvasPoint,
+  getPaintAppCanvasPixelSize,
+  PAINT_APP_CANVAS_PIXEL_SIZE,
+  PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
+  PAINT_APP_VIRTUAL_SCREEN_WIDTH,
+  snapPointToGrid,
+} from "../../lib/virtualScreen";
+import { getPaintPalette } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
 
 const BRUSH_SIZE = 5;
@@ -68,38 +76,58 @@ function getCanvasPoint(
 
 export default function PixelCanvasRenderer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pixelCanvasRef = useRef<PixelCanvas | null>(null);
   const isDrawing = useRef(false);
   const points = useRef<Point[]>([]);
   const linePreviewSnapshot = useRef<ImageData | null>(null);
+  const paletteId = usePaintStore((state) => state.paletteId);
   const selectedColor = usePaintStore((state) => state.selectedColor);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
   const [cursorPoint, setCursorPoint] = useState<Point | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const screenWidth = window.virtualScreenWidth ?? window.innerWidth;
-    const screenHeight = window.virtualScreenHeight ?? window.innerHeight;
-    const maxWidthFromWidth = screenWidth - 155;
-    const maxWidthFromHeight = ((screenHeight - 42) * 3) / 2;
-    const maxWidth = Math.max(
-      100,
-      Math.floor(Math.min(maxWidthFromWidth, maxWidthFromHeight))
-    );
-    canvas.width = maxWidth;
-    canvas.height = Math.floor((maxWidth * 2) / 3);
+    function mountPixelCanvas() {
+      const screenWidth =
+        window.virtualScreenWidth ?? PAINT_APP_VIRTUAL_SCREEN_WIDTH;
+      const screenHeight =
+        window.virtualScreenHeight ?? PAINT_APP_VIRTUAL_SCREEN_HEIGHT;
+      const { width, height } = getPaintAppCanvasPixelSize(
+        screenWidth,
+        screenHeight,
+      );
+      if (
+        canvas!.width === width &&
+        canvas!.height === height &&
+        pixelCanvasRef.current
+      ) {
+        window.dispatchEvent(new Event("pixel-ready"));
+        return;
+      }
 
-    const pixelArt = new PixelCanvas(ctx, {
-      pixelSize: 5,
-    });
+      canvas!.width = width;
+      canvas!.height = height;
 
-    setPa(pixelArt);
-    window.pixel = pixelArt;
+      const pixelArt = new PixelCanvas(ctx!, {
+        pixelSize: PAINT_APP_CANVAS_PIXEL_SIZE,
+        palette: getPaintPalette(usePaintStore.getState().paletteId),
+      });
+
+      pixelCanvasRef.current = pixelArt;
+      setPa(pixelArt);
+      window.pixel = pixelArt;
+      window.dispatchEvent(new Event("pixel-ready"));
+    }
+
+    mountPixelCanvas();
+    window.addEventListener("resize", mountPixelCanvas);
+    return () => window.removeEventListener("resize", mountPixelCanvas);
   }, []);
 
   useEffect(() => {
@@ -107,6 +135,12 @@ export default function PixelCanvasRenderer() {
 
     pa.color = selectedColor;
   }, [pa, selectedColor]);
+
+  useEffect(() => {
+    if (!pa) return;
+
+    pa.setPalette(getPaintPalette(paletteId), { remap: true });
+  }, [pa, paletteId]);
 
   function stopDrawing() {
     isDrawing.current = false;
