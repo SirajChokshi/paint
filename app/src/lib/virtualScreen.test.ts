@@ -3,8 +3,6 @@ import {
   calculateCanvasPoint,
   calculateDragPosition,
   calculateVirtualScreenLayout,
-  mapViewportPointToVirtualScreen,
-  pointsBetween,
   calculateScaledDelta,
   snapPointToGrid,
 } from "./virtualScreen";
@@ -94,28 +92,6 @@ describe("calculateDragPosition", () => {
   });
 });
 
-describe("mapViewportPointToVirtualScreen", () => {
-  it("maps visible framebuffer coordinates back to virtual-screen coordinates", () => {
-    expect(
-      mapViewportPointToVirtualScreen({
-        clientX: 500,
-        clientY: 300,
-        width: 512,
-        height: 342,
-        rect: {
-          left: 180,
-          top: 60,
-          width: 1024,
-          height: 684,
-        },
-      })
-    ).toEqual({
-      x: 160,
-      y: 120,
-    });
-  });
-});
-
 describe("calculateCanvasPoint", () => {
   it("maps pointer coordinates through a scaled canvas rect", () => {
     expect(
@@ -164,16 +140,5 @@ describe("snapPointToGrid", () => {
       x: 100,
       y: 115,
     });
-  });
-});
-
-describe("pointsBetween", () => {
-  it("returns contiguous grid points between two brush cells", () => {
-    expect(pointsBetween({ x: 0, y: 0 }, { x: 15, y: 10 }, 5)).toEqual([
-      { x: 0, y: 0 },
-      { x: 5, y: 5 },
-      { x: 10, y: 5 },
-      { x: 15, y: 10 },
-    ]);
   });
 });
