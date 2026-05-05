@@ -218,52 +218,37 @@ export class PixelCanvas {
     const img = new Image();
     img.src = data;
     img.onload = () => {
-      const logicalWidth = this.image.width;
-      const logicalHeight = this.image.height;
-      if (logicalWidth <= 0 || logicalHeight <= 0) {
+      const renderer = this.renderer;
+      const width = renderer.canvas.width;
+      const height = renderer.canvas.height;
+      if (width <= 0 || height <= 0) {
         return;
       }
 
-      const ctx = this.ctx;
-      const previousComposite = ctx.globalCompositeOperation;
-      ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+      const previousFillStyle = renderer.fillStyle;
+      renderer.fillStyle = "#ffffff";
+      renderer.fillRect(0, 0, width, height);
 
       const scale = Math.min(
-        logicalWidth / img.width,
-        logicalHeight / img.height,
+        width / img.width,
+        height / img.height,
       );
       const drawWidth = Math.max(1, Math.floor(img.width * scale));
       const drawHeight = Math.max(1, Math.floor(img.height * scale));
-      const offsetX = Math.floor((logicalWidth - drawWidth) / 2);
-      const offsetY = Math.floor((logicalHeight - drawHeight) / 2);
+      const offsetX = Math.floor((width - drawWidth) / 2);
+      const offsetY = Math.floor((height - drawHeight) / 2);
 
-      const ctxSmoothing = ctx.imageSmoothingEnabled;
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-      ctx.imageSmoothingEnabled = ctxSmoothing;
-      ctx.globalCompositeOperation = previousComposite;
-
-      const imported = quantizeImageDataToPalette(
-        ctx.getImageData(0, 0, logicalWidth, logicalHeight),
-        this.palette,
-      );
-      ctx.putImageData(imported, 0, 0);
-      this.image = imported;
-      this.data = new Uint32Array(imported.data.buffer);
-
-      const renderer = this.renderer;
       const rendererSmoothing = renderer.imageSmoothingEnabled;
       renderer.imageSmoothingEnabled = false;
-      renderer.drawImage(
-        ctx.canvas,
-        0,
-        0,
-        renderer.canvas.width,
-        renderer.canvas.height,
-      );
+      renderer.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
       renderer.imageSmoothingEnabled = rendererSmoothing;
+
+      const imported = quantizeImageDataToPalette(
+        renderer.getImageData(0, 0, width, height),
+        this.palette,
+      );
+      renderer.putImageData(imported, 0, 0);
+      renderer.fillStyle = previousFillStyle;
     };
   }
 }

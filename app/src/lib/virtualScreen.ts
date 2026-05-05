@@ -40,6 +40,8 @@ export function getPaintAppCanvasLogicalSize(
 export interface VirtualScreenLayoutInput {
   viewportWidth: number;
   viewportHeight: number;
+  viewportOffsetX?: number;
+  viewportOffsetY?: number;
   width?: number;
   height?: number;
 }
@@ -92,6 +94,8 @@ export function calculateVirtualScreenFitScale(
 export function calculateVirtualScreenLayout({
   viewportWidth,
   viewportHeight,
+  viewportOffsetX = 0,
+  viewportOffsetY = 0,
   width = VIRTUAL_SCREEN_WIDTH,
   height = VIRTUAL_SCREEN_HEIGHT,
 }: VirtualScreenLayoutInput): VirtualScreenLayout {
@@ -110,8 +114,8 @@ export function calculateVirtualScreenLayout({
     scale,
     scaledWidth,
     scaledHeight,
-    offsetX: (viewportWidth - scaledWidth) / 2,
-    offsetY: (viewportHeight - scaledHeight) / 2,
+    offsetX: viewportOffsetX + (viewportWidth - scaledWidth) / 2,
+    offsetY: viewportOffsetY + (viewportHeight - scaledHeight) / 2,
   };
 }
 

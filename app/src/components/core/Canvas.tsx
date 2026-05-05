@@ -76,6 +76,7 @@ function getCanvasPoint(
 
 export default function PixelCanvasRenderer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pixelCanvasRef = useRef<PixelCanvas | null>(null);
   const isDrawing = useRef(false);
   const points = useRef<Point[]>([]);
   const linePreviewSnapshot = useRef<ImageData | null>(null);
@@ -100,6 +101,15 @@ export default function PixelCanvasRenderer() {
         screenWidth,
         screenHeight,
       );
+      if (
+        canvas!.width === width &&
+        canvas!.height === height &&
+        pixelCanvasRef.current
+      ) {
+        window.dispatchEvent(new Event("pixel-ready"));
+        return;
+      }
+
       canvas!.width = width;
       canvas!.height = height;
 
@@ -108,6 +118,7 @@ export default function PixelCanvasRenderer() {
         palette: PAINT_APP_PALETTE,
       });
 
+      pixelCanvasRef.current = pixelArt;
       setPa(pixelArt);
       window.pixel = pixelArt;
       window.dispatchEvent(new Event("pixel-ready"));

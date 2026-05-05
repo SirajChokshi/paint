@@ -57,6 +57,20 @@ describe("calculateVirtualScreenLayout", () => {
     expect(layout.scaledWidth).toBeCloseTo(320, 5);
     expect(layout.offsetX).toBeCloseTo(0, 5);
   });
+
+  it("centers within a panned visual viewport", () => {
+    const layout = calculateVirtualScreenLayout({
+      viewportWidth: 320,
+      viewportHeight: 240,
+      viewportOffsetX: 12,
+      viewportOffsetY: 34,
+      width: 512,
+      height: 342,
+    });
+
+    expect(layout.offsetX).toBeCloseTo(12, 5);
+    expect(layout.offsetY).toBeCloseTo(47.125, 5);
+  });
 });
 
 describe("calculateScaledDelta", () => {

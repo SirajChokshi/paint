@@ -65,6 +65,8 @@ function getViewportSize() {
   return {
     viewportWidth: viewport?.width ?? window.innerWidth,
     viewportHeight: viewport?.height ?? window.innerHeight,
+    viewportOffsetX: viewport?.offsetLeft ?? 0,
+    viewportOffsetY: viewport?.offsetTop ?? 0,
   };
 }
 
