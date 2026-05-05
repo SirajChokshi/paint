@@ -9,6 +9,7 @@ import {
   PAINT_APP_VIRTUAL_SCREEN_WIDTH,
   snapPointToGrid,
 } from "../../lib/virtualScreen";
+import { PAINT_APP_PALETTE } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
 
 const BRUSH_SIZE = 5;
@@ -104,6 +105,7 @@ export default function PixelCanvasRenderer() {
 
       const pixelArt = new PixelCanvas(ctx!, {
         pixelSize: PAINT_APP_CANVAS_PIXEL_SIZE,
+        palette: PAINT_APP_PALETTE,
       });
 
       setPa(pixelArt);

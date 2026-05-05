@@ -1,4 +1,8 @@
-import { rgbFromHex } from "./color.util";
+import {
+  quantizeImageDataToPalette,
+  rgbFromHex,
+} from "./palette";
+import type { Palette } from "./palette";
 
 export class PixelCanvas {
   cursor: {
@@ -9,6 +13,7 @@ export class PixelCanvas {
   renderer: CanvasRenderingContext2D;
   ctx: CanvasRenderingContext2D;
   pixelSize: number = 10;
+  palette: Palette = [];
 
   // @ts-ignore
   image: ImageData;
@@ -18,6 +23,7 @@ export class PixelCanvas {
     ctx: CanvasRenderingContext2D,
     options: {
       pixelSize?: number;
+      palette?: Palette;
     } = {}
   ) {
     this.cursor = {
@@ -27,6 +33,7 @@ export class PixelCanvas {
     this.color = "#000000";
     this.renderer = ctx;
     this.ctx = document.createElement("canvas").getContext("2d")!;
+    this.palette = options.palette ?? [];
     this.setPixelSize(options?.pixelSize ?? 10);
 
     this.clear();
@@ -238,7 +245,11 @@ export class PixelCanvas {
       ctx.imageSmoothingEnabled = ctxSmoothing;
       ctx.globalCompositeOperation = previousComposite;
 
-      const imported = ctx.getImageData(0, 0, logicalWidth, logicalHeight);
+      const imported = quantizeImageDataToPalette(
+        ctx.getImageData(0, 0, logicalWidth, logicalHeight),
+        this.palette,
+      );
+      ctx.putImageData(imported, 0, 0);
       this.image = imported;
       this.data = new Uint32Array(imported.data.buffer);
 

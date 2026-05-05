@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
+import { PAINT_APP_PALETTE } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
 
 export type DrawMode = "pencil" | "line" | "fill";
@@ -251,25 +252,6 @@ const ColorGrid = styled.div`
   background: var(--mac-white);
 `;
 
-const COLORS = [
-  "#000000",
-  "#333333",
-  "#777777",
-  "#ffffff",
-  "#880000",
-  "#ff0000",
-  "#cc6600",
-  "#ffff00",
-  "#006600",
-  "#00ff00",
-  "#006666",
-  "#00ffff",
-  "#003366",
-  "#0000ff",
-  "#663300",
-  "#aa00aa",
-];
-
 export default function Tools() {
   const [tool, setTool] = useState<Tool>("pencil");
   const { selectedColor, setSelectedColor, toolMode, setToolMode: setStoreToolMode } = usePaintStore();
@@ -345,7 +327,7 @@ export default function Tools() {
         </FgBgPreview>
       </FgBgSection>
       <ColorGrid>
-        {COLORS.map((color) => (
+        {PAINT_APP_PALETTE.map((color) => (
           <ColorSwatch
             key={color}
             swatchColor={color}
