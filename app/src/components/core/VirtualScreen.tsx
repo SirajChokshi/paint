@@ -11,13 +11,20 @@ interface VirtualScreenProps extends PropsWithChildren {
 }
 
 const Shell = styled.div`
+  position: relative;
   width: 100vw;
   height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
   background: #000;
+`;
+
+const Frame = styled.div<{ layout: VirtualScreenLayout }>`
+  position: absolute;
+  left: ${({ layout }) => layout.offsetX}px;
+  top: ${({ layout }) => layout.offsetY}px;
+  width: ${({ layout }) => layout.scaledWidth}px;
+  height: ${({ layout }) => layout.scaledHeight}px;
+  overflow: hidden;
 `;
 
 const Surface = styled.div<{ layout: VirtualScreenLayout }>`
@@ -27,7 +34,7 @@ const Surface = styled.div<{ layout: VirtualScreenLayout }>`
   overflow: hidden;
   background: var(--mac-white);
   transform: scale(${({ layout }) => layout.scale});
-  transform-origin: center;
+  transform-origin: top left;
   border: 0;
 
   &,
@@ -84,17 +91,21 @@ export default function VirtualScreen({
 
   return (
     <Shell>
-      <Surface
-        id="virtual-screen"
-        layout={layout}
-        style={{
-          "--virtual-screen-width": `${layout.width}px`,
-          "--virtual-screen-height": `${layout.height}px`,
-          "--virtual-screen-scale": String(layout.scale),
-        } as React.CSSProperties}
-      >
-        {children}
-      </Surface>
+      <Frame layout={layout}>
+        <Surface
+          id="virtual-screen"
+          layout={layout}
+          style={
+            {
+              "--virtual-screen-width": `${layout.width}px`,
+              "--virtual-screen-height": `${layout.height}px`,
+              "--virtual-screen-scale": String(layout.scale),
+            } as React.CSSProperties
+          }
+        >
+          {children}
+        </Surface>
+      </Frame>
     </Shell>
   );
 }

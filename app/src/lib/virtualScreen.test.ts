@@ -8,7 +8,7 @@ import {
 } from "./virtualScreen";
 
 describe("calculateVirtualScreenLayout", () => {
-  it("uses integer scaling for any requested resolution", () => {
+  it("letterboxes with contain scaling so one axis is flush", () => {
     const layout = calculateVirtualScreenLayout({
       viewportWidth: 1440,
       viewportHeight: 960,
@@ -16,26 +16,27 @@ describe("calculateVirtualScreenLayout", () => {
       height: 342,
     });
 
-    expect(layout).toEqual({
-      width: 512,
-      height: 342,
-      scale: 2,
-      scaledWidth: 1024,
-      scaledHeight: 684,
-      offsetX: 208,
-      offsetY: 138,
-    });
+    expect(layout.width).toBe(512);
+    expect(layout.height).toBe(342);
+    expect(layout.scale).toBeCloseTo(960 / 342, 10);
+    expect(layout.scaledHeight).toBeCloseTo(960, 5);
+    expect(layout.scaledWidth).toBeCloseTo(512 * layout.scale, 5);
+    expect(layout.offsetY).toBeCloseTo(0, 5);
+    expect(layout.offsetX).toBeGreaterThan(0);
+    expect(layout.offsetX).toBeLessThan(2);
   });
 
-  it("does not scale below 1 for small viewports", () => {
-    expect(
-      calculateVirtualScreenLayout({
-        viewportWidth: 320,
-        viewportHeight: 240,
-        width: 512,
-        height: 342,
-      }).scale
-    ).toBe(1);
+  it("shrinks below 1x when the viewport is smaller than the logical screen", () => {
+    const layout = calculateVirtualScreenLayout({
+      viewportWidth: 320,
+      viewportHeight: 240,
+      width: 512,
+      height: 342,
+    });
+
+    expect(layout.scale).toBeCloseTo(320 / 512, 10);
+    expect(layout.scaledWidth).toBeCloseTo(320, 5);
+    expect(layout.offsetX).toBeCloseTo(0, 5);
   });
 });
 
