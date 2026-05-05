@@ -4,6 +4,10 @@ import {
 } from "./palette";
 import type { Palette } from "./palette";
 
+function shouldUseAnonymousCors(source: string): boolean {
+  return /^https?:\/\//i.test(source);
+}
+
 export class PixelCanvas {
   cursor: {
     x: number;
@@ -216,7 +220,10 @@ export class PixelCanvas {
 
   import(data: string) {
     const img = new Image();
-    img.src = data;
+    if (shouldUseAnonymousCors(data)) {
+      img.crossOrigin = "anonymous";
+    }
+
     img.onload = () => {
       const renderer = this.renderer;
       const width = renderer.canvas.width;
@@ -226,29 +233,34 @@ export class PixelCanvas {
       }
 
       const previousFillStyle = renderer.fillStyle;
-      renderer.fillStyle = "#ffffff";
-      renderer.fillRect(0, 0, width, height);
-
-      const scale = Math.min(
-        width / img.width,
-        height / img.height,
-      );
-      const drawWidth = Math.max(1, Math.floor(img.width * scale));
-      const drawHeight = Math.max(1, Math.floor(img.height * scale));
-      const offsetX = Math.floor((width - drawWidth) / 2);
-      const offsetY = Math.floor((height - drawHeight) / 2);
-
       const rendererSmoothing = renderer.imageSmoothingEnabled;
-      renderer.imageSmoothingEnabled = false;
-      renderer.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-      renderer.imageSmoothingEnabled = rendererSmoothing;
 
-      const imported = quantizeImageDataToPalette(
-        renderer.getImageData(0, 0, width, height),
-        this.palette,
-      );
-      renderer.putImageData(imported, 0, 0);
-      renderer.fillStyle = previousFillStyle;
+      try {
+        renderer.fillStyle = "#ffffff";
+        renderer.fillRect(0, 0, width, height);
+
+        const scale = Math.min(
+          width / img.width,
+          height / img.height,
+        );
+        const drawWidth = Math.max(1, Math.floor(img.width * scale));
+        const drawHeight = Math.max(1, Math.floor(img.height * scale));
+        const offsetX = Math.floor((width - drawWidth) / 2);
+        const offsetY = Math.floor((height - drawHeight) / 2);
+
+        renderer.imageSmoothingEnabled = false;
+        renderer.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+        const imported = quantizeImageDataToPalette(
+          renderer.getImageData(0, 0, width, height),
+          this.palette,
+        );
+        renderer.putImageData(imported, 0, 0);
+      } finally {
+        renderer.imageSmoothingEnabled = rendererSmoothing;
+        renderer.fillStyle = previousFillStyle;
+      }
     };
+    img.src = data;
   }
 }
