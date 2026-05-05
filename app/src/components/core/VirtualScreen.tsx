@@ -86,19 +86,21 @@ export default function VirtualScreen({
   const [layout, setLayout] = useState(() => getLayout(width, height));
 
   useEffect(() => {
+    const viewport = window.visualViewport;
+
     function resize() {
       setLayout(getLayout(width, height));
     }
 
     resize();
     window.addEventListener("resize", resize);
-    visualViewport?.addEventListener("resize", resize);
-    visualViewport?.addEventListener("scroll", resize);
+    viewport?.addEventListener("resize", resize);
+    viewport?.addEventListener("scroll", resize);
 
     return () => {
       window.removeEventListener("resize", resize);
-      visualViewport?.removeEventListener("resize", resize);
-      visualViewport?.removeEventListener("scroll", resize);
+      viewport?.removeEventListener("resize", resize);
+      viewport?.removeEventListener("scroll", resize);
     };
   }, [height, width]);
 
