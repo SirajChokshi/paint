@@ -11,30 +11,13 @@ interface VirtualScreenProps extends PropsWithChildren {
 }
 
 const Shell = styled.div`
-  min-width: 100vw;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 16px;
-  background:
-    radial-gradient(circle at 50% 45%, #343434 0, #181818 58%, #050505 100%);
-`;
-
-const Monitor = styled.div<{ screenWidth: number; screenHeight: number }>`
-  width: ${({ screenWidth }) => screenWidth + 56}px;
-  height: ${({ screenHeight }) => screenHeight + 64}px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #050505;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #d8d2bd, #8f8975);
-  box-shadow:
-    inset 3px 3px 0 rgba(255, 255, 255, 0.45),
-    inset -4px -4px 0 rgba(0, 0, 0, 0.3),
-    0 26px 70px rgba(0, 0, 0, 0.55);
+  background: #000;
 `;
 
 const Surface = styled.div<{ layout: VirtualScreenLayout }>`
@@ -45,10 +28,7 @@ const Surface = styled.div<{ layout: VirtualScreenLayout }>`
   background: var(--mac-white);
   transform: scale(${({ layout }) => layout.scale});
   transform-origin: center;
-  border: 2px solid #101010;
-  box-shadow:
-    inset 0 0 0 2px #282828,
-    0 0 0 6px #655f52;
+  border: 0;
 
   &,
   * {
@@ -70,8 +50,8 @@ const Surface = styled.div<{ layout: VirtualScreenLayout }>`
 
 function getLayout(width: number, height: number) {
   return calculateVirtualScreenLayout({
-    viewportWidth: window.innerWidth - 88,
-    viewportHeight: window.innerHeight - 96,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
     width,
     height,
   });
@@ -104,19 +84,17 @@ export default function VirtualScreen({
 
   return (
     <Shell>
-      <Monitor screenWidth={layout.scaledWidth} screenHeight={layout.scaledHeight}>
-        <Surface
-          id="virtual-screen"
-          layout={layout}
-          style={{
-            "--virtual-screen-width": `${layout.width}px`,
-            "--virtual-screen-height": `${layout.height}px`,
-            "--virtual-screen-scale": String(layout.scale),
-          } as React.CSSProperties}
-        >
-          {children}
-        </Surface>
-      </Monitor>
+      <Surface
+        id="virtual-screen"
+        layout={layout}
+        style={{
+          "--virtual-screen-width": `${layout.width}px`,
+          "--virtual-screen-height": `${layout.height}px`,
+          "--virtual-screen-scale": String(layout.scale),
+        } as React.CSSProperties}
+      >
+        {children}
+      </Surface>
     </Shell>
   );
 }
