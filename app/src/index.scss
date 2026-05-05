@@ -51,6 +51,7 @@
   user-select: none;
   box-sizing: border-box;
   image-rendering: pixelated;
+  text-rendering: geometricPrecision;
 }
 
 html,
@@ -66,14 +67,22 @@ html {
 
 body {
   margin: 0;
-  display: grid;
+  min-width: 100vw;
   height: 100%;
-  grid-template-columns: 1fr;
-  grid-template-rows: min-content 1fr;
+  background: #141414;
 }
 
 main {
   position: relative;
+  width: var(--virtual-screen-width, 640px);
+  height: calc(var(--virtual-screen-height, 480px) - 21px);
+  overflow: hidden;
+}
+
+.virtual-screen__content {
+  font-smooth: never;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font {

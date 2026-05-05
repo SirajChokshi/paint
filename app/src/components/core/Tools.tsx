@@ -1,14 +1,15 @@
 import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
+import { usePaintStore } from "../../stores/paintStore";
 
-type DrawMode = "line" | "fill";
-type Tool = "pencil" | "line" | "fill" | "erase";
+export type DrawMode = "pencil" | "line" | "fill";
+type Tool = DrawMode | "erase";
 
 const TOOL_TO_MODE: Record<Tool, DrawMode> = {
-  pencil: "line",
+  pencil: "pencil",
   line: "line",
   fill: "fill",
-  erase: "line",
+  erase: "pencil",
 };
 
 const ToolGrid = styled.div`
@@ -16,6 +17,7 @@ const ToolGrid = styled.div`
   flex-direction: column;
   background: var(--mac-white);
   border-bottom: 1px solid var(--mac-black);
+  width: 104px;
 `;
 
 const ToolSection = styled.div`
@@ -220,8 +222,8 @@ const ColorSwatch = styled.button<{
 }>`
   all: unset;
   box-sizing: border-box;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   cursor: default;
   position: relative;
   background: ${({ swatchColor }) => swatchColor};
@@ -230,9 +232,8 @@ const ColorSwatch = styled.button<{
   ${({ isSelected }) =>
     isSelected
       ? `
-    border: 2px solid var(--mac-black);
-    width: 18px;
-    height: 18px;
+    outline: 2px solid var(--mac-black);
+    outline-offset: -3px;
   `
       : ""}
 
@@ -243,38 +244,48 @@ const ColorSwatch = styled.button<{
 
 const ColorGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 18px);
-  gap: 0;
-  padding: 6px;
+  grid-template-columns: repeat(4, 20px);
+  gap: 2px;
+  padding: 7px;
   justify-content: center;
   background: var(--mac-white);
 `;
 
 const COLORS = [
   "#000000",
-  "#808080",
-  "#c0c0c0",
+  "#333333",
+  "#777777",
   "#ffffff",
+  "#880000",
   "#ff0000",
-  "#ff8200",
+  "#cc6600",
   "#ffff00",
+  "#006600",
   "#00ff00",
-  "#008040",
+  "#006666",
   "#00ffff",
+  "#003366",
   "#0000ff",
-  "#c000c0",
-  "#c04020",
-  "#806000",
-  "#ffc080",
+  "#663300",
+  "#aa00aa",
 ];
 
 export default function Tools() {
   const [tool, setTool] = useState<Tool>("pencil");
-  const [selectedColor, setSelectedColor] = useState("#000000");
+  const { selectedColor, setSelectedColor, toolMode, setToolMode: setStoreToolMode } = usePaintStore();
 
   useEffect(() => {
-    window.mode = TOOL_TO_MODE[tool];
-  }, [tool]);
+    setTool((currentTool) => {
+      if (currentTool === "erase") return currentTool;
+
+      return currentTool === toolMode ? currentTool : toolMode;
+    });
+  }, [toolMode]);
+
+  function setToolMode(t: Tool) {
+    setStoreToolMode(TOOL_TO_MODE[t]);
+    setTool(t);
+  }
 
   function setColor(color: string) {
     setSelectedColor(color);
@@ -283,7 +294,7 @@ export default function Tools() {
   }
 
   function selectTool(t: Tool) {
-    setTool(t);
+    setToolMode(t);
     if (t === "erase") {
       setColor("#ffffff");
     } else if (t === "pencil") {
@@ -344,7 +355,7 @@ export default function Tools() {
             onClick={() => {
               setColor(color);
               if (tool === "erase") {
-                setTool("pencil");
+                setToolMode("pencil");
               }
             }}
           />

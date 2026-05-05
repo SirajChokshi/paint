@@ -1,8 +1,8 @@
 import styled from "@emotion/styled";
-import { PropsWithChildren, useEffect, useRef } from "react";
+import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import { v4 } from "uuid";
 import { Position, useWindowStore } from "../stores/windowStore";
-import { useDraggable } from "@dnd-kit/core";
+import { calculateDragPosition } from "../lib/virtualScreen";
 
 const WindowWrapper = styled.div<{
   z: number;
@@ -108,6 +108,7 @@ interface WindowProps {
   id?: string;
   startClosed?: boolean;
   defaultPosition?: Position;
+  dragFromBody?: boolean;
 }
 
 export default function Window({
@@ -117,19 +118,24 @@ export default function Window({
   id: controlledId,
   startClosed,
   defaultPosition,
+  dragFromBody,
 }: PropsWithChildren<WindowProps>) {
   const id = useRef(controlledId ?? v4());
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: id.current,
-  });
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
-    : undefined;
+  const windowRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    position: Position;
+    pointer: Position;
+  } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const { getWindow, addWindow, removeWindow, touchWindow, getStackOrder } =
-    useWindowStore();
+  const {
+    getWindow,
+    addWindow,
+    removeWindow,
+    touchWindow,
+    getStackOrder,
+    setWindowPosition,
+  } = useWindowStore();
   const initialX = defaultPosition?.x ?? 0;
   const initialY = defaultPosition?.y ?? 0;
 
@@ -151,32 +157,83 @@ export default function Window({
 
   const { position } = maybeWindow;
 
-  const windowHandler = title
-    ? {}
-    : {
-        ...listeners,
-        ...attributes,
-      };
+  function isInteractiveDragTarget(target: EventTarget | null) {
+    return (
+      target instanceof HTMLElement &&
+      target.closest("button, a, input, select, textarea, [role='button']") !==
+        null
+    );
+  }
+
+  function startDrag(event: React.PointerEvent) {
+    if (event.button !== 0) return;
+    if (isInteractiveDragTarget(event.target)) return;
+
+    event.preventDefault();
+
+    dragRef.current = {
+      position,
+      pointer: {
+        x: event.clientX,
+        y: event.clientY,
+      },
+    };
+    setIsDragging(true);
+    touchWindow(id.current);
+    windowRef.current?.setPointerCapture(event.pointerId);
+  }
+
+  function drag(event: React.PointerEvent) {
+    const start = dragRef.current;
+    if (!start) return;
+
+    setWindowPosition(
+      id.current,
+      calculateDragPosition({
+        startPosition: start.position,
+        startPointer: start.pointer,
+        currentPointer: {
+          x: event.clientX,
+          y: event.clientY,
+        },
+        scale: window.virtualScreenScale ?? 1,
+      })
+    );
+  }
+
+  function stopDrag(event: React.PointerEvent) {
+    dragRef.current = null;
+    setIsDragging(false);
+    if (windowRef.current?.hasPointerCapture(event.pointerId)) {
+      windowRef.current.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  const windowHandler = dragFromBody || !title ? { onPointerDown: startDrag } : {};
+  const titlebarHandler = dragFromBody ? {} : { onPointerDown: startDrag };
 
   return (
     <WindowWrapper
-      ref={setNodeRef}
+      ref={windowRef}
       className="window"
-      style={style}
       left={position.x}
       top={position.y}
-      z={alwaysOnTop ? 9999 : getStackOrder(id.current) + 99}
-      allDraggable={!title}
+      z={alwaysOnTop ? 9999 : isDragging ? 9998 : getStackOrder(id.current) + 99}
+      allDraggable={!title || dragFromBody === true}
+      onPointerMove={drag}
+      onPointerUp={stopDrag}
+      onPointerCancel={stopDrag}
       onMouseDown={() => touchWindow(id.current)}
       {...windowHandler}
     >
       {title ? (
-        <div className="window__titlebar" {...attributes} {...listeners}>
+        <div className="window__titlebar" {...titlebarHandler}>
           <div className="window__stripes">
             <div className="window__stripes-inner" />
           </div>
           <button
             className="window__close-box"
+            onPointerDown={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();

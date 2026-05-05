@@ -17,7 +17,7 @@ interface WindowStore {
   getWindow: (id: string) => WindowData | undefined;
   touchWindow: (id: string) => void;
   getStackOrder: (id: string) => number;
-  moveWindow: (id: string, delta: Position) => void;
+  setWindowPosition: (id: string, position: Position) => void;
 }
 
 export const useWindowStore = create<WindowStore>((set, get) => ({
@@ -46,7 +46,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     return get().windows.findIndex((window) => window.id === id);
   },
 
-  moveWindow: (id: string, delta: Position) => {
+  setWindowPosition: (id: string, position: Position) => {
     const window = get().getWindow(id);
 
     if (!window) return;
@@ -56,10 +56,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
         ...state.windows.filter((window) => window.id !== id),
         {
           ...window,
-          position: {
-            x: window.position.x + delta.x,
-            y: window.position.y + delta.y,
-          },
+          position,
         },
       ],
     }));
