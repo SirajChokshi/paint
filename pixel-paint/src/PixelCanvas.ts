@@ -298,9 +298,11 @@ export class PixelCanvas {
       }
 
       const previousFillStyle = target.fillStyle;
+      const previousCompositeOperation = target.globalCompositeOperation;
       const targetSmoothing = target.imageSmoothingEnabled;
 
       try {
+        target.globalCompositeOperation = "source-over";
         target.fillStyle = "#ffffff";
         target.fillRect(0, 0, width, height);
 
@@ -339,6 +341,7 @@ export class PixelCanvas {
         }
       } finally {
         target.imageSmoothingEnabled = targetSmoothing;
+        target.globalCompositeOperation = previousCompositeOperation;
         target.fillStyle = previousFillStyle;
       }
     };
