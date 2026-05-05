@@ -207,11 +207,52 @@ export class PixelCanvas {
     return this.renderer.canvas.toDataURL();
   }
 
-  import(data: string, scale = 1) {
+  import(data: string) {
     const img = new Image();
     img.src = data;
     img.onload = () => {
-      this.renderer.drawImage(img, 0, 0, img.width * scale, img.height * scale);
+      const logicalWidth = this.image.width;
+      const logicalHeight = this.image.height;
+      if (logicalWidth <= 0 || logicalHeight <= 0) {
+        return;
+      }
+
+      const ctx = this.ctx;
+      const previousComposite = ctx.globalCompositeOperation;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+
+      const scale = Math.min(
+        logicalWidth / img.width,
+        logicalHeight / img.height,
+      );
+      const drawWidth = Math.max(1, Math.floor(img.width * scale));
+      const drawHeight = Math.max(1, Math.floor(img.height * scale));
+      const offsetX = Math.floor((logicalWidth - drawWidth) / 2);
+      const offsetY = Math.floor((logicalHeight - drawHeight) / 2);
+
+      const ctxSmoothing = ctx.imageSmoothingEnabled;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.imageSmoothingEnabled = ctxSmoothing;
+      ctx.globalCompositeOperation = previousComposite;
+
+      const imported = ctx.getImageData(0, 0, logicalWidth, logicalHeight);
+      this.image = imported;
+      this.data = new Uint32Array(imported.data.buffer);
+
+      const renderer = this.renderer;
+      const rendererSmoothing = renderer.imageSmoothingEnabled;
+      renderer.imageSmoothingEnabled = false;
+      renderer.drawImage(
+        ctx.canvas,
+        0,
+        0,
+        renderer.canvas.width,
+        renderer.canvas.height,
+      );
+      renderer.imageSmoothingEnabled = rendererSmoothing;
     };
   }
 }

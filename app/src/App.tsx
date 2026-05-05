@@ -3,6 +3,10 @@ import Desktop from "./components/core/Desktop";
 import Menubar from "./components/core/Menubar";
 import Tools from "./components/core/Tools";
 import VirtualScreen from "./components/core/VirtualScreen";
+import {
+  PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
+  PAINT_APP_VIRTUAL_SCREEN_WIDTH,
+} from "./lib/virtualScreen";
 import Window from "./components/Window";
 import { AboutWindow } from "./components/windows/about-window";
 
@@ -14,7 +18,10 @@ export const WINDOW_IDS = {
 
 function App() {
   return (
-    <VirtualScreen width={512} height={342}>
+    <VirtualScreen
+      width={PAINT_APP_VIRTUAL_SCREEN_WIDTH}
+      height={PAINT_APP_VIRTUAL_SCREEN_HEIGHT}
+    >
       <Menubar />
       <main>
         <Desktop />

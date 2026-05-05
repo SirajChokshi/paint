@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren, useEffect, useLayoutEffect, useState } from "react";
 import {
   VirtualScreenLayout,
   calculateVirtualScreenLayout,
@@ -15,7 +15,12 @@ const Shell = styled.div`
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #000;
+  background-color: #4a7dc6;
+  background-image: url("/dither.png");
+  background-size: 2px 2px;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 `;
 
 const Frame = styled.div<{ layout: VirtualScreenLayout }>`
@@ -55,10 +60,17 @@ const Surface = styled.div<{ layout: VirtualScreenLayout }>`
   }
 `;
 
+function getViewportSize() {
+  const viewport = window.visualViewport;
+  return {
+    viewportWidth: viewport?.width ?? window.innerWidth,
+    viewportHeight: viewport?.height ?? window.innerHeight,
+  };
+}
+
 function getLayout(width: number, height: number) {
   return calculateVirtualScreenLayout({
-    viewportWidth: window.innerWidth,
-    viewportHeight: window.innerHeight,
+    ...getViewportSize(),
     width,
     height,
   });
@@ -76,14 +88,19 @@ export default function VirtualScreen({
       setLayout(getLayout(width, height));
     }
 
+    resize();
     window.addEventListener("resize", resize);
+    visualViewport?.addEventListener("resize", resize);
+    visualViewport?.addEventListener("scroll", resize);
 
     return () => {
       window.removeEventListener("resize", resize);
+      visualViewport?.removeEventListener("resize", resize);
+      visualViewport?.removeEventListener("scroll", resize);
     };
   }, [height, width]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.virtualScreenScale = layout.scale;
     window.virtualScreenWidth = layout.width;
     window.virtualScreenHeight = layout.height;

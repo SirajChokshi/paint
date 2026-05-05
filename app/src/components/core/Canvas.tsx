@@ -1,7 +1,14 @@
 import styled from "@emotion/styled";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PixelCanvas } from "pixel-paint";
-import { calculateCanvasPoint, snapPointToGrid } from "../../lib/virtualScreen";
+import {
+  calculateCanvasPoint,
+  getPaintAppCanvasPixelSize,
+  PAINT_APP_CANVAS_PIXEL_SIZE,
+  PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
+  PAINT_APP_VIRTUAL_SCREEN_WIDTH,
+  snapPointToGrid,
+} from "../../lib/virtualScreen";
 import { usePaintStore } from "../../stores/paintStore";
 
 const BRUSH_SIZE = 5;
@@ -76,30 +83,37 @@ export default function PixelCanvasRenderer() {
   const [pa, setPa] = useState<PixelCanvas | null>(null);
   const [cursorPoint, setCursorPoint] = useState<Point | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const screenWidth = window.virtualScreenWidth ?? window.innerWidth;
-    const screenHeight = window.virtualScreenHeight ?? window.innerHeight;
-    const maxWidthFromWidth = screenWidth - 155;
-    const maxWidthFromHeight = ((screenHeight - 42) * 3) / 2;
-    const maxWidth = Math.max(
-      100,
-      Math.floor(Math.min(maxWidthFromWidth, maxWidthFromHeight))
-    );
-    canvas.width = maxWidth;
-    canvas.height = Math.floor((maxWidth * 2) / 3);
+    function mountPixelCanvas() {
+      const screenWidth =
+        window.virtualScreenWidth ?? PAINT_APP_VIRTUAL_SCREEN_WIDTH;
+      const screenHeight =
+        window.virtualScreenHeight ?? PAINT_APP_VIRTUAL_SCREEN_HEIGHT;
+      const { width, height } = getPaintAppCanvasPixelSize(
+        screenWidth,
+        screenHeight,
+      );
+      canvas!.width = width;
+      canvas!.height = height;
 
-    const pixelArt = new PixelCanvas(ctx, {
-      pixelSize: 5,
-    });
+      const pixelArt = new PixelCanvas(ctx!, {
+        pixelSize: PAINT_APP_CANVAS_PIXEL_SIZE,
+      });
 
-    setPa(pixelArt);
-    window.pixel = pixelArt;
+      setPa(pixelArt);
+      window.pixel = pixelArt;
+      window.dispatchEvent(new Event("pixel-ready"));
+    }
+
+    mountPixelCanvas();
+    window.addEventListener("resize", mountPixelCanvas);
+    return () => window.removeEventListener("resize", mountPixelCanvas);
   }, []);
 
   useEffect(() => {

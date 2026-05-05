@@ -1,6 +1,42 @@
 export const VIRTUAL_SCREEN_WIDTH = 640;
 export const VIRTUAL_SCREEN_HEIGHT = 480;
 
+/** Logical size passed to `VirtualScreen` in `App.tsx` (404 embed should match). */
+export const PAINT_APP_VIRTUAL_SCREEN_WIDTH = 512;
+export const PAINT_APP_VIRTUAL_SCREEN_HEIGHT = 342;
+
+/** Brush grid for `PixelCanvas` in `Canvas.tsx`. */
+export const PAINT_APP_CANVAS_PIXEL_SIZE = 5;
+
+/** Bitmap size of the Untitled canvas (`Canvas.tsx`). Keep 404 import assets in sync. */
+export function getPaintAppCanvasPixelSize(
+  screenWidth = PAINT_APP_VIRTUAL_SCREEN_WIDTH,
+  screenHeight = PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
+) {
+  const maxWidthFromWidth = screenWidth - 155;
+  const maxWidthFromHeight = ((screenHeight - 42) * 3) / 2;
+  const width = Math.max(
+    100,
+    Math.floor(Math.min(maxWidthFromWidth, maxWidthFromHeight)),
+  );
+  return { width, height: Math.floor((width * 2) / 3) };
+}
+
+export function getPaintAppCanvasLogicalSize(
+  screenWidth = PAINT_APP_VIRTUAL_SCREEN_WIDTH,
+  screenHeight = PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
+  pixelSize = PAINT_APP_CANVAS_PIXEL_SIZE,
+) {
+  const { width, height } = getPaintAppCanvasPixelSize(
+    screenWidth,
+    screenHeight,
+  );
+  return {
+    width: Math.floor(width / pixelSize),
+    height: Math.floor(height / pixelSize),
+  };
+}
+
 export interface VirtualScreenLayoutInput {
   viewportWidth: number;
   viewportHeight: number;
