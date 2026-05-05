@@ -12,7 +12,9 @@ function runPendingEmbedImport() {
     return;
   }
 
-  window.pixel.import(pendingEmbedImportUrl);
+  const url = pendingEmbedImportUrl;
+  pendingEmbedImportUrl = null;
+  window.pixel.import(url);
 }
 
 function importIntoCanvas(url: string) {

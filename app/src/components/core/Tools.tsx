@@ -257,7 +257,9 @@ export default function Tools() {
   const {
     paletteId,
     selectedColor,
+    selectedColorIndex,
     setSelectedColor,
+    setSelectedColorIndex,
     toolMode,
     setToolMode: setStoreToolMode,
   } = usePaintStore();
@@ -334,15 +336,18 @@ export default function Tools() {
         </FgBgPreview>
       </FgBgSection>
       <ColorGrid>
-        {palette.map((color) => (
+        {palette.map((color, colorIndex) => (
           <ColorSwatch
             key={color}
             swatchColor={color}
-            isSelected={selectedColor === color && tool !== "erase"}
+            isSelected={selectedColorIndex === colorIndex && tool !== "erase"}
             aria-label={`Set drawing color to ${color}`}
             title={color}
             onClick={() => {
-              setColor(color);
+              setSelectedColorIndex(colorIndex);
+              if (window.pixel) {
+                window.pixel.color = color;
+              }
               if (tool === "erase") {
                 setToolMode("pencil");
               }

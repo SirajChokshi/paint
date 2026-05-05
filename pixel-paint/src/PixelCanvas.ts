@@ -1,4 +1,6 @@
 import {
+  getClosestPaletteColor,
+  normalizeHexColor,
   quantizeImageDataToPalette,
   rgbFromHex,
 } from "./palette";
@@ -6,6 +8,14 @@ import type { Palette } from "./palette";
 
 function shouldUseAnonymousCors(source: string): boolean {
   return /^https?:\/\//i.test(source);
+}
+
+export interface PixelCanvasImportOptions {
+  resolution?: "logical" | "renderer";
+}
+
+export interface PixelCanvasSetPaletteOptions {
+  remap?: boolean;
 }
 
 export class PixelCanvas {
@@ -41,6 +51,59 @@ export class PixelCanvas {
     this.setPixelSize(options?.pixelSize ?? 10);
 
     this.clear();
+  }
+
+  setPalette(palette: Palette, options: PixelCanvasSetPaletteOptions = {}) {
+    const previousPalette = this.palette;
+    this.palette = palette;
+
+    if (options.remap === true) {
+      this.remapContextPalette(this.renderer, previousPalette, palette);
+      this.remapContextPalette(this.ctx, previousPalette, palette);
+    }
+  }
+
+  private remapContextPalette(
+    context: CanvasRenderingContext2D,
+    previousPalette: Palette,
+    nextPalette: Palette
+  ) {
+    const width = context.canvas.width;
+    const height = context.canvas.height;
+    if (width <= 0 || height <= 0 || previousPalette.length === 0) {
+      return;
+    }
+
+    const previousColors = previousPalette.map((color) =>
+      normalizeHexColor(color)
+    );
+    const image = context.getImageData(0, 0, width, height);
+    const data = image.data;
+
+    for (let index = 0; index < data.length; index += 4) {
+      if (data[index + 3] === 0) {
+        continue;
+      }
+
+      const previousColor = getClosestPaletteColor(
+        {
+          r: data[index],
+          g: data[index + 1],
+          b: data[index + 2],
+        },
+        previousPalette
+      );
+      const slot = previousColors.indexOf(previousColor);
+      const nextColor = normalizeHexColor(nextPalette[slot] ?? "") ?? previousColor;
+      const rgb = rgbFromHex(nextColor);
+
+      data[index] = rgb.r;
+      data[index + 1] = rgb.g;
+      data[index + 2] = rgb.b;
+      data[index + 3] = 255;
+    }
+
+    context.putImageData(image, 0, 0);
   }
 
   setPixelSize(pixelSize: number) {
@@ -218,7 +281,7 @@ export class PixelCanvas {
     return this.renderer.canvas.toDataURL();
   }
 
-  import(data: string) {
+  import(data: string, options: PixelCanvasImportOptions = {}) {
     const img = new Image();
     if (shouldUseAnonymousCors(data)) {
       img.crossOrigin = "anonymous";
@@ -226,18 +289,20 @@ export class PixelCanvas {
 
     img.onload = () => {
       const renderer = this.renderer;
-      const width = renderer.canvas.width;
-      const height = renderer.canvas.height;
+      const resolution = options.resolution ?? "logical";
+      const target = resolution === "renderer" ? renderer : this.ctx;
+      const width = target.canvas.width;
+      const height = target.canvas.height;
       if (width <= 0 || height <= 0) {
         return;
       }
 
-      const previousFillStyle = renderer.fillStyle;
-      const rendererSmoothing = renderer.imageSmoothingEnabled;
+      const previousFillStyle = target.fillStyle;
+      const targetSmoothing = target.imageSmoothingEnabled;
 
       try {
-        renderer.fillStyle = "#ffffff";
-        renderer.fillRect(0, 0, width, height);
+        target.fillStyle = "#ffffff";
+        target.fillRect(0, 0, width, height);
 
         const scale = Math.min(
           width / img.width,
@@ -248,17 +313,33 @@ export class PixelCanvas {
         const offsetX = Math.floor((width - drawWidth) / 2);
         const offsetY = Math.floor((height - drawHeight) / 2);
 
-        renderer.imageSmoothingEnabled = false;
-        renderer.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+        target.imageSmoothingEnabled = false;
+        target.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
 
         const imported = quantizeImageDataToPalette(
-          renderer.getImageData(0, 0, width, height),
+          target.getImageData(0, 0, width, height),
           this.palette,
         );
-        renderer.putImageData(imported, 0, 0);
+        target.putImageData(imported, 0, 0);
+
+        if (resolution === "logical") {
+          this.image = imported;
+          this.data = new Uint32Array(imported.data.buffer);
+
+          const rendererSmoothing = renderer.imageSmoothingEnabled;
+          renderer.imageSmoothingEnabled = false;
+          renderer.drawImage(
+            target.canvas,
+            0,
+            0,
+            renderer.canvas.width,
+            renderer.canvas.height,
+          );
+          renderer.imageSmoothingEnabled = rendererSmoothing;
+        }
       } finally {
-        renderer.imageSmoothingEnabled = rendererSmoothing;
-        renderer.fillStyle = previousFillStyle;
+        target.imageSmoothingEnabled = targetSmoothing;
+        target.fillStyle = previousFillStyle;
       }
     };
     img.src = data;

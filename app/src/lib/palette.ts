@@ -105,6 +105,22 @@ export function getPaintPalette(id: PaintPaletteId): Palette {
   return PAINT_APP_PALETTES[id]?.colors ?? PAINT_APP_PALETTE;
 }
 
+export function getPaintPaletteColor(
+  id: PaintPaletteId,
+  colorIndex: number,
+): string {
+  return getPaintPalette(id)[colorIndex] ?? getPaintPalette(id)[0] ?? "#000000";
+}
+
+export function getPaintPaletteColorIndex(
+  color: string,
+  palette: Palette = PAINT_APP_PALETTE,
+): number {
+  const quantized = quantizeToPaintPalette(color, palette);
+  const index = palette.indexOf(quantized);
+  return index === -1 ? 0 : index;
+}
+
 export function quantizeToPaintPalette(
   color: string,
   palette: Palette = PAINT_APP_PALETTE,

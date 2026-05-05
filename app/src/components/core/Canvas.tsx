@@ -139,7 +139,7 @@ export default function PixelCanvasRenderer() {
   useEffect(() => {
     if (!pa) return;
 
-    pa.palette = getPaintPalette(paletteId);
+    pa.setPalette(getPaintPalette(paletteId), { remap: true });
   }, [pa, paletteId]);
 
   function stopDrawing() {
