@@ -207,6 +207,7 @@ export default function PixelCanvasRenderer() {
           ref={canvasRef}
           onPointerDown={(e) => {
             if (!pa) return;
+            if (e.button !== 0) return;
 
             const point = moveCursor(e);
             if (!point) return;

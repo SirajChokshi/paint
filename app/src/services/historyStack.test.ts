@@ -121,6 +121,27 @@ describe("HistoryStackService", () => {
     expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
   });
 
+  it("cancels the entire active transaction stack before future commits", () => {
+    const canvas = createStringTarget("blank");
+    const history = new HistoryStackService(canvas.target);
+
+    history.beginTransaction();
+    canvas.value = "stroke-started";
+    history.beginTransaction();
+    canvas.value = "right-click-stroke";
+    history.cancelTransaction();
+
+    expect(canvas.value).toBe("blank");
+    expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
+
+    history.runTransaction(() => {
+      canvas.value = "next-stroke";
+    });
+
+    expect(history.undo()).toBe(true);
+    expect(canvas.value).toBe("blank");
+  });
+
   it("commits async transactions after awaited work changes the target", async () => {
     const canvas = createStringTarget("blank");
     const history = new HistoryStackService(canvas.target);

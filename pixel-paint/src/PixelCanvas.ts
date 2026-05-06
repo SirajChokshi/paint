@@ -10,6 +10,21 @@ function shouldUseAnonymousCors(source: string): boolean {
   return /^https?:\/\//i.test(source);
 }
 
+function describeImportSource(source: string): string {
+  const dataUrlMatch = /^data:([^,]*),/i.exec(source);
+  if (dataUrlMatch) {
+    const metadata = dataUrlMatch[1] || "unknown";
+    return `data URL (${metadata}, ${source.length} characters)`;
+  }
+
+  const maxSourceLength = 160;
+  if (source.length <= maxSourceLength) {
+    return `"${source}"`;
+  }
+
+  return `"${source.slice(0, maxSourceLength)}..." (${source.length} characters)`;
+}
+
 export interface PixelCanvasImportOptions {
   resolution?: "logical" | "renderer";
 }
@@ -281,7 +296,7 @@ export class PixelCanvas {
     return this.renderer.canvas.toDataURL();
   }
 
-  import(data: string, options: PixelCanvasImportOptions = {}) {
+  import(data: string, options: PixelCanvasImportOptions = {}): Promise<void> {
     const img = new Image();
     if (shouldUseAnonymousCors(data)) {
       img.crossOrigin = "anonymous";
@@ -308,7 +323,10 @@ export class PixelCanvas {
           target.fillStyle = "#ffffff";
           target.fillRect(0, 0, width, height);
 
-          const scale = Math.min(width / img.width, height / img.height);
+          const scale = Math.min(
+            width / img.width,
+            height / img.height,
+          );
           const drawWidth = Math.max(1, Math.floor(img.width * scale));
           const drawHeight = Math.max(1, Math.floor(img.height * scale));
           const offsetX = Math.floor((width - drawWidth) / 2);
@@ -328,24 +346,33 @@ export class PixelCanvas {
             this.data = new Uint32Array(imported.data.buffer);
 
             const rendererSmoothing = renderer.imageSmoothingEnabled;
-            renderer.imageSmoothingEnabled = false;
-            renderer.drawImage(
-              target.canvas,
-              0,
-              0,
-              renderer.canvas.width,
-              renderer.canvas.height,
-            );
-            renderer.imageSmoothingEnabled = rendererSmoothing;
+            try {
+              renderer.imageSmoothingEnabled = false;
+              renderer.drawImage(
+                target.canvas,
+                0,
+                0,
+                renderer.canvas.width,
+                renderer.canvas.height,
+              );
+            } finally {
+              renderer.imageSmoothingEnabled = rendererSmoothing;
+            }
           }
+          resolve();
+        } catch (error) {
+          reject(error);
         } finally {
           target.globalCompositeOperation = previousCompositeOperation;
           target.imageSmoothingEnabled = targetSmoothing;
           target.fillStyle = previousFillStyle;
         }
-        resolve();
       };
-      img.onerror = () => reject(new Error("Failed to import image"));
+
+      img.onerror = () => {
+        reject(new Error(`Unable to import image from ${describeImportSource(data)}`));
+      };
+
       img.src = data;
     });
   }

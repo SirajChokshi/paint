@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import { SaveFile, useFileStore } from "../../stores/fileStore";
 import { MouseEvent as ReactMouseEvent, useEffect, useState } from "react";
 import { canvasHistory } from "../../services/canvasHistory";
+import { reportPixelImportError } from "../../lib/importPixelImage";
 
 const DesktopWrapper = styled.div`
   position: absolute;
@@ -174,7 +175,9 @@ export default function Desktop() {
             key={file.name + file.date}
             onClick={handleClickFactory(file)}
             onOpen={() => {
-              void canvasHistory.replaceWithImport(file.payload);
+              void canvasHistory
+                .replaceWithImport(file.payload)
+                .catch(reportPixelImportError);
               setActive(null);
             }}
             active={active?.payload === file.payload}

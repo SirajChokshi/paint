@@ -9,6 +9,10 @@ import { WINDOW_IDS } from "../../App";
 import { PAINT_APP_PALETTE_IDS, PAINT_APP_PALETTES } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
 import { canvasHistory } from "../../services/canvasHistory";
+import {
+  getPixelImportErrorMessage,
+  reportPixelImportError,
+} from "../../lib/importPixelImage";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   display: flex;
@@ -52,6 +56,11 @@ export default function Menubar() {
     return canvasHistory.subscribe(setHistoryState);
   }, []);
 
+  function reportInteractiveImportError(error: unknown) {
+    reportPixelImportError(error);
+    window.alert(`Could not import image: ${getPixelImportErrorMessage(error)}`);
+  }
+
   function importImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
@@ -62,7 +71,7 @@ export default function Menubar() {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        canvasHistory.import(reader.result);
+        void canvasHistory.import(reader.result).catch(reportInteractiveImportError);
       }
     };
     reader.readAsDataURL(file);
@@ -126,9 +135,11 @@ export default function Menubar() {
                 ? files.slice(0, 5).map((file) => ({
                     name: `${file.name}.img`,
                     onClick: () => {
-                      void canvasHistory.replaceWithImport(file.payload, {
-                        resolution: "renderer",
-                      });
+                      void canvasHistory
+                        .replaceWithImport(file.payload, {
+                          resolution: "renderer",
+                        })
+                        .catch(reportInteractiveImportError);
                     },
                   }))
                 : [

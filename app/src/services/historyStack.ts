@@ -161,11 +161,7 @@ export class HistoryStackService<TSnapshot> {
       return;
     }
 
-    this.transactionDepth -= 1;
-    if (this.transactionDepth > 0) {
-      return;
-    }
-
+    this.transactionDepth = 0;
     const before = this.transactionBefore;
     this.transactionBefore = null;
     if (before !== null) {

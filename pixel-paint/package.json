@@ -11,12 +11,14 @@
   "scripts": {
     "build": "tsup src/index.ts",
     "dev": "tsup src --watch",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "tsup": "^8.5.1"
+    "tsup": "^8.5.1",
+    "vitest": "^4.1.5"
   }
 }

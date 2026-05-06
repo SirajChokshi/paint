@@ -1,4 +1,5 @@
 import { canvasHistory } from "../services/canvasHistory";
+import { reportPixelImportError } from "./importPixelImage";
 
 interface ImportEventData {
   type: "import";
@@ -26,7 +27,7 @@ function applyEmbedImport() {
 
   appliedEmbedImportUrl = embedImportUrl;
   appliedEmbedPixel = window.pixel;
-  canvasHistory.import(embedImportUrl);
+  void canvasHistory.import(embedImportUrl).catch(reportPixelImportError);
 }
 
 function importIntoCanvas(url: string) {
