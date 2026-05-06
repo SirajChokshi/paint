@@ -80,6 +80,7 @@ export default function PixelCanvasRenderer() {
   const pixelCanvasRef = useRef<PixelCanvas | null>(null);
   const isDrawing = useRef(false);
   const points = useRef<Point[]>([]);
+  const drawingStartSnapshot = useRef<ImageData | null>(null);
   const linePreviewSnapshot = useRef<ImageData | null>(null);
   const paletteId = usePaintStore((state) => state.paletteId);
   const selectedColor = usePaintStore((state) => state.selectedColor);
@@ -143,21 +144,47 @@ export default function PixelCanvasRenderer() {
     pa.setPalette(getPaintPalette(paletteId), { remap: true });
   }, [pa, paletteId]);
 
+  useEffect(() => {
+    function cancelActiveDrawing(event: MouseEvent) {
+      if (!isDrawing.current) return;
+
+      event.preventDefault();
+      cancelDrawing();
+    }
+
+    window.addEventListener("contextmenu", cancelActiveDrawing, {
+      capture: true,
+    });
+
+    return () => {
+      window.removeEventListener("contextmenu", cancelActiveDrawing, {
+        capture: true,
+      });
+    };
+  }, []);
+
   function stopDrawing() {
     if (isDrawing.current) {
       canvasHistory.commitTransaction();
     }
     isDrawing.current = false;
     points.current.length = 0;
+    drawingStartSnapshot.current = null;
     linePreviewSnapshot.current = null;
   }
 
   function cancelDrawing() {
+    const snapshot = drawingStartSnapshot.current;
+    const pixelCanvas = pixelCanvasRef.current;
+    if (snapshot && pixelCanvas) {
+      pixelCanvas.renderer.putImageData(snapshot, 0, 0);
+    }
     if (isDrawing.current) {
       canvasHistory.cancelTransaction();
     }
     isDrawing.current = false;
     points.current.length = 0;
+    drawingStartSnapshot.current = null;
     linePreviewSnapshot.current = null;
   }
 
@@ -228,6 +255,12 @@ export default function PixelCanvasRenderer() {
             canvasHistory.beginTransaction();
             isDrawing.current = true;
             points.current = [point];
+            drawingStartSnapshot.current = pa.renderer.getImageData(
+              0,
+              0,
+              pa.renderer.canvas.width,
+              pa.renderer.canvas.height
+            );
             linePreviewSnapshot.current =
               tool === "line"
                 ? pa.renderer.getImageData(
