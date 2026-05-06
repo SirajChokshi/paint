@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { PixelCanvas } from "pixel-paint";
+import { HistoryStackState } from "./historyStack";
 import { CanvasHistoryService } from "./canvasHistory";
 
 class TestImageData {
@@ -59,6 +60,31 @@ function createPixelCanvas(initialValue: number) {
   return { pixelCanvas, renderer };
 }
 
+function createDeferred<T>() {
+  let resolve: (value: T) => void = () => {};
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+}
+
+function createPixelCanvasWithDeferredImport(initialValue: number) {
+  const renderer = new TestCanvasRenderer(initialValue);
+  const deferred = createDeferred<number>();
+  const pixelCanvas = {
+    renderer,
+    clear: () => renderer.setValue(0),
+    fill: () => renderer.setValue(1),
+    setPalette: () => renderer.setValue(2),
+    import: async () => {
+      renderer.setValue(await deferred.promise);
+    },
+  } as unknown as PixelCanvas;
+
+  return { pixelCanvas, renderer, deferred };
+}
+
 beforeAll(() => {
   globalThis.ImageData = TestImageData as typeof ImageData;
 });
@@ -76,5 +102,46 @@ describe("CanvasHistoryService", () => {
     expect(renderer.value).toBe(7);
     expect(history.redo()).toBe(true);
     expect(renderer.value).toBe(9);
+  });
+
+  it("ignores emissions from an old history stack after rebinding", async () => {
+    const history = new CanvasHistoryService();
+    const first = createPixelCanvasWithDeferredImport(1);
+    const second = createPixelCanvas(2);
+    const states: HistoryStackState[] = [];
+
+    history.subscribe((state) => states.push(state));
+    history.bind(first.pixelCanvas);
+    const importPromise = history.import("3");
+    history.bind(second.pixelCanvas);
+
+    first.deferred.resolve(3);
+    await importPromise;
+
+    expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
+    expect(states[states.length - 1]).toEqual({ canUndo: false, canRedo: false });
+  });
+
+  it("fails fast instead of recursing when the original import is unavailable", async () => {
+    const history = new CanvasHistoryService();
+    const { pixelCanvas } = createPixelCanvas(1);
+
+    history.bind(pixelCanvas);
+    (
+      history as unknown as {
+        plugin: null;
+        restoreImport: null;
+      }
+    ).plugin = null;
+    (
+      history as unknown as {
+        plugin: null;
+        restoreImport: null;
+      }
+    ).restoreImport = null;
+
+    await expect(history.import("2")).rejects.toThrow(
+      "Canvas import plugin is not installed",
+    );
   });
 });

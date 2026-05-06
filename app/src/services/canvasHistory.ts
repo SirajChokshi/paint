@@ -46,6 +46,7 @@ export class CanvasHistoryService {
   private plugin: CanvasMutationPlugin | null = null;
   private listeners = new Set<CanvasHistoryListener>();
   private restoreImport: PixelCanvas["import"] | null = null;
+  private unsubscribeHistory: (() => void) | null = null;
 
   getState(): HistoryStackState {
     return this.history?.getState() ?? { canUndo: false, canRedo: false };
@@ -70,7 +71,7 @@ export class CanvasHistoryService {
       },
       isEqual: imageDataEquals,
     });
-    this.history.subscribe((state) => this.emit(state));
+    this.unsubscribeHistory = this.history.subscribe((state) => this.emit(state));
     this.installPlugin(pixelCanvas);
   }
 
@@ -123,7 +124,7 @@ export class CanvasHistoryService {
     }
 
     return this.runAsyncTransaction(async () => {
-      await this.callUntrackedImport(pixelCanvas, data, options);
+      await this.callUntrackedImport(data, options);
     });
   }
 
@@ -136,7 +137,7 @@ export class CanvasHistoryService {
 
     return this.runAsyncTransaction(async () => {
       plugin.clear();
-      await this.callUntrackedImport(pixelCanvas, data, options);
+      await this.callUntrackedImport(data, options);
     });
   }
 
@@ -169,6 +170,9 @@ export class CanvasHistoryService {
   }
 
   private uninstallPlugin() {
+    this.unsubscribeHistory?.();
+    this.unsubscribeHistory = null;
+
     if (!this.pixelCanvas || !this.plugin) {
       return;
     }
@@ -181,14 +185,10 @@ export class CanvasHistoryService {
     this.restoreImport = null;
   }
 
-  private callUntrackedImport(
-    pixelCanvas: PixelCanvas,
-    data: string,
-    options: PixelCanvasImportOptions,
-  ) {
+  private callUntrackedImport(data: string, options: PixelCanvasImportOptions) {
     const importImage = this.restoreImport ?? this.plugin?.import;
     if (!importImage) {
-      return pixelCanvas.import(data, options);
+      return Promise.reject(new Error("Canvas import plugin is not installed"));
     }
 
     return importImage(data, options);
