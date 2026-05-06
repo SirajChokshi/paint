@@ -1,6 +1,6 @@
 import * as Toolbar from "@radix-ui/react-menubar";
 import styled from "@emotion/styled";
-import { ChangeEvent, useRef } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useFileStore } from "../../stores/fileStore";
 import { FrameBus } from "../../lib/frame";
 import { Menu } from "./Menu";
@@ -8,6 +8,7 @@ import { useWindowStore } from "../../stores/windowStore";
 import { WINDOW_IDS } from "../../App";
 import { PAINT_APP_PALETTE_IDS, PAINT_APP_PALETTES } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
+import { canvasHistory } from "../../services/canvasHistory";
 import {
   getPixelImportErrorMessage,
   reportPixelImportError,
@@ -49,6 +50,11 @@ export default function Menubar() {
   const { save, files } = useFileStore();
   const { paletteId, setPaletteId } = usePaintStore();
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [historyState, setHistoryState] = useState(canvasHistory.getState());
+
+  useEffect(() => {
+    return canvasHistory.subscribe(setHistoryState);
+  }, []);
 
   function reportInteractiveImportError(error: unknown) {
     reportPixelImportError(error);
@@ -65,7 +71,7 @@ export default function Menubar() {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        void window.pixel.import(reader.result).catch(reportInteractiveImportError);
+        void canvasHistory.import(reader.result).catch(reportInteractiveImportError);
       }
     };
     reader.readAsDataURL(file);
@@ -129,9 +135,8 @@ export default function Menubar() {
                 ? files.slice(0, 5).map((file) => ({
                     name: `${file.name}.img`,
                     onClick: () => {
-                      window.pixel.clear();
-                      void window.pixel
-                        .import(file.payload, {
+                      void canvasHistory
+                        .replaceWithImport(file.payload, {
                           resolution: "renderer",
                         })
                         .catch(reportInteractiveImportError);
@@ -168,8 +173,16 @@ export default function Menubar() {
       </Menu>
       <Menu
         actions={[
-          { name: "Undo", onClick: () => {} },
-          { name: "Redo", onClick: () => {} },
+          {
+            name: "Undo",
+            onClick: () => canvasHistory.undo(),
+            disabled: !historyState.canUndo,
+          },
+          {
+            name: "Redo",
+            onClick: () => canvasHistory.redo(),
+            disabled: !historyState.canRedo,
+          },
         ]}
       >
         <button>Edit</button>

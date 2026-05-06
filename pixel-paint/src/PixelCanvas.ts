@@ -302,7 +302,7 @@ export class PixelCanvas {
       img.crossOrigin = "anonymous";
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       img.onload = () => {
         const renderer = this.renderer;
         const resolution = options.resolution ?? "logical";
