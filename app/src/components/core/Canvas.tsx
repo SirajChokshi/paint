@@ -183,6 +183,7 @@ export default function PixelCanvasRenderer() {
       canvasHistory.cancelTransaction();
     }
     isDrawing.current = false;
+    setCursorPoint(null);
     points.current.length = 0;
     drawingStartSnapshot.current = null;
     linePreviewSnapshot.current = null;
