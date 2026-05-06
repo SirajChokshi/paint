@@ -8,6 +8,7 @@ import { useWindowStore } from "../../stores/windowStore";
 import { WINDOW_IDS } from "../../App";
 import { PAINT_APP_PALETTE_IDS, PAINT_APP_PALETTES } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
+import { reportPixelImportError } from "../../lib/importPixelImage";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   display: flex;
@@ -46,6 +47,12 @@ export default function Menubar() {
   const { paletteId, setPaletteId } = usePaintStore();
   const importInputRef = useRef<HTMLInputElement>(null);
 
+  function reportInteractiveImportError(error: unknown) {
+    reportPixelImportError(error);
+    const message = error instanceof Error ? error.message : String(error);
+    window.alert(`Could not import image: ${message}`);
+  }
+
   function importImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
@@ -56,7 +63,7 @@ export default function Menubar() {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        window.pixel.import(reader.result);
+        void window.pixel.import(reader.result).catch(reportInteractiveImportError);
       }
     };
     reader.readAsDataURL(file);
@@ -121,9 +128,11 @@ export default function Menubar() {
                     name: `${file.name}.img`,
                     onClick: () => {
                       window.pixel.clear();
-                      window.pixel.import(file.payload, {
-                        resolution: "renderer",
-                      });
+                      void window.pixel
+                        .import(file.payload, {
+                          resolution: "renderer",
+                        })
+                        .catch(reportInteractiveImportError);
                     },
                   }))
                 : [
