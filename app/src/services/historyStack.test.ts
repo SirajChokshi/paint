@@ -109,6 +109,18 @@ describe("HistoryStackService", () => {
     expect(canvas.value).toBe("stroke-finished");
   });
 
+  it("rolls the target back when a manual transaction is canceled", () => {
+    const canvas = createStringTarget("blank");
+    const history = new HistoryStackService(canvas.target);
+
+    history.beginTransaction();
+    canvas.value = "orphaned-stroke";
+    history.cancelTransaction();
+
+    expect(canvas.value).toBe("blank");
+    expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
+  });
+
   it("commits async transactions after awaited work changes the target", async () => {
     const canvas = createStringTarget("blank");
     const history = new HistoryStackService(canvas.target);
