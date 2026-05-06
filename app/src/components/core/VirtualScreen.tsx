@@ -15,12 +15,7 @@ const Shell = styled.div`
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: #4a7dc6;
-  background-image: url("/dither.png");
-  background-size: 2px 2px;
-  background-repeat: repeat;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+  background-color: #000;
 `;
 
 const Frame = styled.div<{ layout: VirtualScreenLayout }>`
