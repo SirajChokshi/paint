@@ -11,6 +11,7 @@ import {
 } from "../../lib/virtualScreen";
 import { getPaintPalette } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
+import { canvasHistory } from "../../services/canvasHistory";
 
 const BRUSH_SIZE = 5;
 
@@ -121,6 +122,7 @@ export default function PixelCanvasRenderer() {
       pixelCanvasRef.current = pixelArt;
       setPa(pixelArt);
       window.pixel = pixelArt;
+      canvasHistory.bind(pixelArt);
       window.dispatchEvent(new Event("pixel-ready"));
     }
 
@@ -142,6 +144,18 @@ export default function PixelCanvasRenderer() {
   }, [pa, paletteId]);
 
   function stopDrawing() {
+    if (isDrawing.current) {
+      canvasHistory.commitTransaction();
+    }
+    isDrawing.current = false;
+    points.current.length = 0;
+    linePreviewSnapshot.current = null;
+  }
+
+  function cancelDrawing() {
+    if (isDrawing.current) {
+      canvasHistory.cancelTransaction();
+    }
     isDrawing.current = false;
     points.current.length = 0;
     linePreviewSnapshot.current = null;
@@ -201,10 +215,10 @@ export default function PixelCanvasRenderer() {
 
             if (tool === "fill") {
               pa.fill(point.x, point.y);
-              stopDrawing();
               return;
             }
 
+            canvasHistory.beginTransaction();
             isDrawing.current = true;
             points.current = [point];
             linePreviewSnapshot.current =
@@ -238,11 +252,11 @@ export default function PixelCanvasRenderer() {
           }}
           onPointerLeave={() => {
             setCursorPoint(null);
-            stopDrawing();
+            cancelDrawing();
           }}
           onContextMenu={(e) => {
             e.preventDefault();
-            stopDrawing();
+            cancelDrawing();
           }}
           onPointerMove={(e) => {
             if (!pa) return;

@@ -1,3 +1,5 @@
+import { canvasHistory } from "../services/canvasHistory";
+
 interface ImportEventData {
   type: "import";
   payload: {
@@ -24,7 +26,7 @@ function applyEmbedImport() {
 
   appliedEmbedImportUrl = embedImportUrl;
   appliedEmbedPixel = window.pixel;
-  window.pixel.import(embedImportUrl);
+  canvasHistory.import(embedImportUrl);
 }
 
 function importIntoCanvas(url: string) {
