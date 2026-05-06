@@ -8,7 +8,10 @@ import { useWindowStore } from "../../stores/windowStore";
 import { WINDOW_IDS } from "../../App";
 import { PAINT_APP_PALETTE_IDS, PAINT_APP_PALETTES } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
-import { reportPixelImportError } from "../../lib/importPixelImage";
+import {
+  getPixelImportErrorMessage,
+  reportPixelImportError,
+} from "../../lib/importPixelImage";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   display: flex;
@@ -49,8 +52,7 @@ export default function Menubar() {
 
   function reportInteractiveImportError(error: unknown) {
     reportPixelImportError(error);
-    const message = error instanceof Error ? error.message : String(error);
-    window.alert(`Could not import image: ${message}`);
+    window.alert(`Could not import image: ${getPixelImportErrorMessage(error)}`);
   }
 
   function importImage(event: ChangeEvent<HTMLInputElement>) {

@@ -10,6 +10,21 @@ function shouldUseAnonymousCors(source: string): boolean {
   return /^https?:\/\//i.test(source);
 }
 
+function describeImportSource(source: string): string {
+  const dataUrlMatch = /^data:([^,]*),/i.exec(source);
+  if (dataUrlMatch) {
+    const metadata = dataUrlMatch[1] || "unknown";
+    return `data URL (${metadata}, ${source.length} characters)`;
+  }
+
+  const maxSourceLength = 160;
+  if (source.length <= maxSourceLength) {
+    return `"${source}"`;
+  }
+
+  return `"${source.slice(0, maxSourceLength)}..." (${source.length} characters)`;
+}
+
 export interface PixelCanvasImportOptions {
   resolution?: "logical" | "renderer";
 }
@@ -355,7 +370,7 @@ export class PixelCanvas {
       };
 
       img.onerror = () => {
-        reject(new Error(`Unable to import image from "${data}"`));
+        reject(new Error(`Unable to import image from ${describeImportSource(data)}`));
       };
 
       img.src = data;

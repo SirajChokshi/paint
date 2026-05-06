@@ -132,6 +132,22 @@ describe("PixelCanvas.import", () => {
     );
   });
 
+  it("does not embed oversized data URLs in load failure messages", async () => {
+    const { pixelCanvas } = createPixelCanvas();
+    const payload = "A".repeat(1024 * 1024);
+    const dataUrl = `data:image/png;base64,${payload}`;
+
+    const importPromise = pixelCanvas.import(dataUrl);
+    StubImage.instances[0].onerror?.(new Event("error"));
+
+    await expect(importPromise).rejects.toMatchObject({
+      message: expect.not.stringContaining(payload),
+    });
+    await expect(importPromise).rejects.toMatchObject({
+      message: expect.stringMatching(/^.{1,200}$/s),
+    });
+  });
+
   it("rejects with the canvas import failure when browser security blocks pixel reads", async () => {
     const { logical, pixelCanvas } = createPixelCanvas();
     logical.shouldThrowOnGetImageData = true;
