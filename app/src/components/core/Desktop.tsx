@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import { SaveFile, useFileStore } from "../../stores/fileStore";
 import { MouseEvent as ReactMouseEvent, useEffect, useState } from "react";
+import { importPixelImage } from "../../lib/importPixelImage";
 
 const DesktopWrapper = styled.div`
   position: absolute;
@@ -174,7 +175,7 @@ export default function Desktop() {
             onClick={handleClickFactory(file)}
             onOpen={() => {
               window.pixel.clear();
-              window.pixel.import(file.payload);
+              void importPixelImage(file.payload);
               setActive(null);
             }}
             active={active?.payload === file.payload}

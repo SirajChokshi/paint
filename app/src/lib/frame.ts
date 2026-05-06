@@ -1,3 +1,5 @@
+import { importPixelImage } from "./importPixelImage";
+
 interface ImportEventData {
   type: "import";
   payload: {
@@ -24,7 +26,7 @@ function applyEmbedImport() {
 
   appliedEmbedImportUrl = embedImportUrl;
   appliedEmbedPixel = window.pixel;
-  window.pixel.import(embedImportUrl);
+  void importPixelImage(embedImportUrl);
 }
 
 function importIntoCanvas(url: string) {

@@ -10,6 +10,21 @@ function shouldUseAnonymousCors(source: string): boolean {
   return /^https?:\/\//i.test(source);
 }
 
+function describeImportSource(source: string): string {
+  const dataUrlMatch = /^data:([^,]*),/i.exec(source);
+  if (dataUrlMatch) {
+    const metadata = dataUrlMatch[1] || "unknown";
+    return `data URL (${metadata}, ${source.length} characters)`;
+  }
+
+  const maxSourceLength = 160;
+  if (source.length <= maxSourceLength) {
+    return `"${source}"`;
+  }
+
+  return `"${source.slice(0, maxSourceLength)}..." (${source.length} characters)`;
+}
+
 export interface PixelCanvasImportOptions {
   resolution?: "logical" | "renderer";
 }
@@ -281,70 +296,84 @@ export class PixelCanvas {
     return this.renderer.canvas.toDataURL();
   }
 
-  import(data: string, options: PixelCanvasImportOptions = {}) {
+  import(data: string, options: PixelCanvasImportOptions = {}): Promise<void> {
     const img = new Image();
     if (shouldUseAnonymousCors(data)) {
       img.crossOrigin = "anonymous";
     }
 
-    img.onload = () => {
-      const renderer = this.renderer;
-      const resolution = options.resolution ?? "logical";
-      const target = resolution === "renderer" ? renderer : this.ctx;
-      const width = target.canvas.width;
-      const height = target.canvas.height;
-      if (width <= 0 || height <= 0) {
-        return;
-      }
-
-      const previousFillStyle = target.fillStyle;
-      const targetSmoothing = target.imageSmoothingEnabled;
-      const previousCompositeOperation = target.globalCompositeOperation;
-
-      try {
-        target.globalCompositeOperation = "source-over";
-        target.fillStyle = "#ffffff";
-        target.fillRect(0, 0, width, height);
-
-        const scale = Math.min(
-          width / img.width,
-          height / img.height,
-        );
-        const drawWidth = Math.max(1, Math.floor(img.width * scale));
-        const drawHeight = Math.max(1, Math.floor(img.height * scale));
-        const offsetX = Math.floor((width - drawWidth) / 2);
-        const offsetY = Math.floor((height - drawHeight) / 2);
-
-        target.imageSmoothingEnabled = true;
-        target.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-
-        const imported = quantizeImageDataToPalette(
-          target.getImageData(0, 0, width, height),
-          this.palette,
-        );
-        target.putImageData(imported, 0, 0);
-
-        if (resolution === "logical") {
-          this.image = imported;
-          this.data = new Uint32Array(imported.data.buffer);
-
-          const rendererSmoothing = renderer.imageSmoothingEnabled;
-          renderer.imageSmoothingEnabled = false;
-          renderer.drawImage(
-            target.canvas,
-            0,
-            0,
-            renderer.canvas.width,
-            renderer.canvas.height,
-          );
-          renderer.imageSmoothingEnabled = rendererSmoothing;
+    return new Promise((resolve, reject) => {
+      img.onload = () => {
+        const renderer = this.renderer;
+        const resolution = options.resolution ?? "logical";
+        const target = resolution === "renderer" ? renderer : this.ctx;
+        const width = target.canvas.width;
+        const height = target.canvas.height;
+        if (width <= 0 || height <= 0) {
+          resolve();
+          return;
         }
-      } finally {
-        target.globalCompositeOperation = previousCompositeOperation;
-        target.imageSmoothingEnabled = targetSmoothing;
-        target.fillStyle = previousFillStyle;
-      }
-    };
-    img.src = data;
+
+        const previousFillStyle = target.fillStyle;
+        const targetSmoothing = target.imageSmoothingEnabled;
+        const previousCompositeOperation = target.globalCompositeOperation;
+
+        try {
+          target.globalCompositeOperation = "source-over";
+          target.fillStyle = "#ffffff";
+          target.fillRect(0, 0, width, height);
+
+          const scale = Math.min(
+            width / img.width,
+            height / img.height,
+          );
+          const drawWidth = Math.max(1, Math.floor(img.width * scale));
+          const drawHeight = Math.max(1, Math.floor(img.height * scale));
+          const offsetX = Math.floor((width - drawWidth) / 2);
+          const offsetY = Math.floor((height - drawHeight) / 2);
+
+          target.imageSmoothingEnabled = true;
+          target.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+          const imported = quantizeImageDataToPalette(
+            target.getImageData(0, 0, width, height),
+            this.palette,
+          );
+          target.putImageData(imported, 0, 0);
+
+          if (resolution === "logical") {
+            this.image = imported;
+            this.data = new Uint32Array(imported.data.buffer);
+
+            const rendererSmoothing = renderer.imageSmoothingEnabled;
+            try {
+              renderer.imageSmoothingEnabled = false;
+              renderer.drawImage(
+                target.canvas,
+                0,
+                0,
+                renderer.canvas.width,
+                renderer.canvas.height,
+              );
+            } finally {
+              renderer.imageSmoothingEnabled = rendererSmoothing;
+            }
+          }
+          resolve();
+        } catch (error) {
+          reject(error);
+        } finally {
+          target.globalCompositeOperation = previousCompositeOperation;
+          target.imageSmoothingEnabled = targetSmoothing;
+          target.fillStyle = previousFillStyle;
+        }
+      };
+
+      img.onerror = () => {
+        reject(new Error(`Unable to import image from ${describeImportSource(data)}`));
+      };
+
+      img.src = data;
+    });
   }
 }
