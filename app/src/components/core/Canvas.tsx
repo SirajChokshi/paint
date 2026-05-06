@@ -107,7 +107,6 @@ export default function PixelCanvasRenderer() {
         canvas!.height === height &&
         pixelCanvasRef.current
       ) {
-        window.dispatchEvent(new Event("pixel-ready"));
         return;
       }
 

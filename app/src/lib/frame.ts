@@ -5,52 +5,47 @@ interface ImportEventData {
   };
 }
 
-let pendingEmbedImportUrl: string | null = null;
+/** Last URL from the parent embed; re-applied when `window.pixel` is (re)created. */
+let embedImportUrl: string | null = null;
+let appliedEmbedImportUrl: string | null = null;
+let appliedEmbedPixel: (typeof window)["pixel"] | null = null;
 
-function runPendingEmbedImport() {
-  if (!pendingEmbedImportUrl || !window.pixel) {
+function applyEmbedImport() {
+  if (!embedImportUrl || !window.pixel) {
     return;
   }
 
-  const url = pendingEmbedImportUrl;
-  pendingEmbedImportUrl = null;
-  window.pixel.import(url);
+  if (
+    appliedEmbedImportUrl === embedImportUrl &&
+    appliedEmbedPixel === window.pixel
+  ) {
+    return;
+  }
+
+  appliedEmbedImportUrl = embedImportUrl;
+  appliedEmbedPixel = window.pixel;
+  window.pixel.import(embedImportUrl);
 }
 
 function importIntoCanvas(url: string) {
-  pendingEmbedImportUrl = url;
-  runPendingEmbedImport();
+  const urlChanged = embedImportUrl !== url;
+  embedImportUrl = url;
 
-  if (window.pixel) {
-    return;
+  if (urlChanged) {
+    appliedEmbedImportUrl = null;
+    appliedEmbedPixel = null;
   }
 
-  const started = performance.now();
-  const wait = window.setInterval(() => {
-    runPendingEmbedImport();
-    if (window.pixel) {
-      window.clearInterval(wait);
-      return;
-    }
+  applyEmbedImport();
+}
 
-    if (performance.now() - started > 5000) {
-      window.clearInterval(wait);
-    }
-  }, 16);
-
-  const onPixelReady = () => {
-    runPendingEmbedImport();
-    if (window.pixel) {
-      window.clearInterval(wait);
-      window.removeEventListener("pixel-ready", onPixelReady);
-    }
-  };
-
-  window.addEventListener("pixel-ready", onPixelReady);
+function onPixelReady() {
+  applyEmbedImport();
 }
 
 class FrameBusImpl {
   constructor() {
+    window.addEventListener("pixel-ready", onPixelReady);
     window.addEventListener("message", function (event) {
       if (event.data.type === "import") {
         const { url } = event.data.payload as ImportEventData["payload"];

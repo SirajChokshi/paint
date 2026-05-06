@@ -299,8 +299,10 @@ export class PixelCanvas {
 
       const previousFillStyle = target.fillStyle;
       const targetSmoothing = target.imageSmoothingEnabled;
+      const previousCompositeOperation = target.globalCompositeOperation;
 
       try {
+        target.globalCompositeOperation = "source-over";
         target.fillStyle = "#ffffff";
         target.fillRect(0, 0, width, height);
 
@@ -313,7 +315,7 @@ export class PixelCanvas {
         const offsetX = Math.floor((width - drawWidth) / 2);
         const offsetY = Math.floor((height - drawHeight) / 2);
 
-        target.imageSmoothingEnabled = false;
+        target.imageSmoothingEnabled = true;
         target.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
 
         const imported = quantizeImageDataToPalette(
@@ -338,6 +340,7 @@ export class PixelCanvas {
           renderer.imageSmoothingEnabled = rendererSmoothing;
         }
       } finally {
+        target.globalCompositeOperation = previousCompositeOperation;
         target.imageSmoothingEnabled = targetSmoothing;
         target.fillStyle = previousFillStyle;
       }
