@@ -175,13 +175,13 @@ export default function Menubar() {
         actions={[
           {
             name: "Undo",
-            onClick: () => canvasHistory.undo(),
-            disabled: !historyState.canUndo,
+            onClick: () => canvasHistory.redo(),
+            disabled: !historyState.canRedo,
           },
           {
             name: "Redo",
-            onClick: () => canvasHistory.redo(),
-            disabled: !historyState.canRedo,
+            onClick: () => canvasHistory.undo(),
+            disabled: !historyState.canUndo,
           },
         ]}
       >
