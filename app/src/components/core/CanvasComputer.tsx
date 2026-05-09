@@ -4,10 +4,8 @@ import { drawBitmapText, measureBitmapText } from "../../lib/bitmapFont";
 import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
-  CanvasWindow,
-  INDEXED_16_COLOR_PALETTE,
   MACINTOSH_CHROME_PALETTE,
-  Point,
+  MENUBAR_HEIGHT,
   TOOL_PALETTE_COLUMNS,
   TOOL_PALETTE_OFFSET,
   TOOL_PALETTE_SWATCH_SIZE,
@@ -16,11 +14,12 @@ import {
   getMenuAtPoint,
   getWindowDragHandle,
   moveWindowByPointer,
-  quantizeToIndexedPalette,
   screenPointToCanvasPoint,
+  type CanvasWindow,
+  type MenuId,
+  type Point,
 } from "../../lib/canvasComputer";
-
-type MenuId = "file" | "edit" | "view";
+import { PAINT_APP_PALETTE } from "../../lib/palette";
 
 interface DragState {
   id: string;
@@ -32,11 +31,10 @@ interface DragState {
   };
 }
 
-const MENU_HEIGHT = 21;
 const PAINT_CANVAS_WIDTH = 298;
 const PAINT_CANVAS_HEIGHT = 180;
 const PAINT_SCROLLBAR_GAP = 8;
-const TOOL_COLORS = INDEXED_16_COLOR_PALETTE.map(quantizeToIndexedPalette);
+const TOOL_COLORS = PAINT_APP_PALETTE;
 
 const Shell = styled.div`
   min-width: 100vw;
@@ -93,9 +91,9 @@ function rectContains(
 
 function drawDither(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
-  ctx.fillRect(0, MENU_HEIGHT, CANVAS_COMPUTER_WIDTH, CANVAS_COMPUTER_HEIGHT);
+  ctx.fillRect(0, MENUBAR_HEIGHT, CANVAS_COMPUTER_WIDTH, CANVAS_COMPUTER_HEIGHT);
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
-  for (let y = MENU_HEIGHT + 1; y < CANVAS_COMPUTER_HEIGHT; y += 4) {
+  for (let y = MENUBAR_HEIGHT + 1; y < CANVAS_COMPUTER_HEIGHT; y += 4) {
     for (let x = 1; x < CANVAS_COMPUTER_WIDTH; x += 4) {
       ctx.fillRect(x, y, 1, 1);
     }
@@ -133,9 +131,9 @@ function drawMenuBar(
   activeMenu: MenuId | null
 ) {
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
-  ctx.fillRect(0, 0, CANVAS_COMPUTER_WIDTH, MENU_HEIGHT);
+  ctx.fillRect(0, 0, CANVAS_COMPUTER_WIDTH, MENUBAR_HEIGHT);
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
-  ctx.fillRect(0, MENU_HEIGHT - 2, CANVAS_COMPUTER_WIDTH, 2);
+  ctx.fillRect(0, MENUBAR_HEIGHT - 2, CANVAS_COMPUTER_WIDTH, 2);
   drawText(ctx, "⌘", 10, 4);
   drawText(ctx, "File", 38, 4);
   drawText(ctx, "Edit", 76, 4);
@@ -154,14 +152,14 @@ function drawMenuBar(
   const menuHeight = labels.length * 20 + 4;
 
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
-  ctx.fillRect(menuX + 3, MENU_HEIGHT + 3, menuWidth, menuHeight);
+  ctx.fillRect(menuX + 3, MENUBAR_HEIGHT + 3, menuWidth, menuHeight);
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[1];
-  ctx.fillRect(menuX, MENU_HEIGHT, menuWidth, menuHeight);
+  ctx.fillRect(menuX, MENUBAR_HEIGHT, menuWidth, menuHeight);
   ctx.fillStyle = MACINTOSH_CHROME_PALETTE[0];
-  strokeRect1(ctx, menuX, MENU_HEIGHT, menuWidth, menuHeight);
-  strokeRect1(ctx, menuX + 1, MENU_HEIGHT + 1, menuWidth - 2, menuHeight - 2);
+  strokeRect1(ctx, menuX, MENUBAR_HEIGHT, menuWidth, menuHeight);
+  strokeRect1(ctx, menuX + 1, MENUBAR_HEIGHT + 1, menuWidth - 2, menuHeight - 2);
   labels.forEach((label, index) => {
-    drawText(ctx, label, menuX + 14, MENU_HEIGHT + 5 + index * 20);
+    drawText(ctx, label, menuX + 14, MENUBAR_HEIGHT + 5 + index * 20);
   });
 }
 

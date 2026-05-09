@@ -2,13 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   CANVAS_COMPUTER_HEIGHT,
   CANVAS_COMPUTER_WIDTH,
-  INDEXED_16_COLOR_PALETTE,
   calculateCanvasComputerLayout,
   getMenuAtPoint,
   getWindowDragHandle,
   clampWindowPosition,
   moveWindowByPointer,
-  quantizeToIndexedPalette,
   getPaletteIndexAtPoint,
   screenPointToCanvasPoint,
 } from "./canvasComputer";
@@ -107,27 +105,11 @@ describe("clampWindowPosition", () => {
   });
 });
 
-describe("quantizeToIndexedPalette", () => {
-  it("uses the shared 16 color indexed paint palette", () => {
-    expect(INDEXED_16_COLOR_PALETTE).toBe(PAINT_APP_PALETTE);
-    expect(INDEXED_16_COLOR_PALETTE).toHaveLength(16);
-    expect(new Set(INDEXED_16_COLOR_PALETTE).size).toBe(16);
-    expect(INDEXED_16_COLOR_PALETTE).toContain("#000000");
-    expect(INDEXED_16_COLOR_PALETTE).toContain("#ffffff");
-    expect(INDEXED_16_COLOR_PALETTE).toContain("#5fd36f");
-    expect(INDEXED_16_COLOR_PALETTE).toContain("#5f8cff");
-    expect(INDEXED_16_COLOR_PALETTE).toContain("#9a6a3a");
-    expect(quantizeToIndexedPalette("#fefefe")).toBe("#ffffff");
-    expect(quantizeToIndexedPalette("#010101")).toBe("#000000");
-    expect(quantizeToIndexedPalette("#ee1208")).toBe("#e84646");
-  });
-});
-
 describe("getPaletteIndexAtPoint", () => {
   it("matches the visible palette swatch grid", () => {
     const input = {
       windowPosition: { x: 14, y: 32 },
-      colorCount: INDEXED_16_COLOR_PALETTE.length,
+      colorCount: PAINT_APP_PALETTE.length,
     };
 
     expect(getPaletteIndexAtPoint({ ...input, point: { x: 31, y: 180 } })).toBe(0);

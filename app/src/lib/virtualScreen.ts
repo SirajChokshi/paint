@@ -22,21 +22,6 @@ export function getPaintAppCanvasPixelSize(
   return { width, height: Math.floor((width * 2) / 3) };
 }
 
-export function getPaintAppCanvasLogicalSize(
-  screenWidth = PAINT_APP_VIRTUAL_SCREEN_WIDTH,
-  screenHeight = PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
-  pixelSize = PAINT_APP_CANVAS_PIXEL_SIZE,
-) {
-  const { width, height } = getPaintAppCanvasPixelSize(
-    screenWidth,
-    screenHeight,
-  );
-  return {
-    width: Math.floor(width / pixelSize),
-    height: Math.floor(height / pixelSize),
-  };
-}
-
 export interface VirtualScreenLayoutInput {
   viewportWidth: number;
   viewportHeight: number;

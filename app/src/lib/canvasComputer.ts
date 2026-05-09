@@ -1,5 +1,3 @@
-import { PAINT_APP_PALETTE, quantizeToPaintPalette } from "./palette";
-
 export const CANVAS_COMPUTER_WIDTH = 512;
 export const CANVAS_COMPUTER_HEIGHT = 342;
 export const MENUBAR_HEIGHT = 21;
@@ -15,7 +13,6 @@ export const TOOL_PALETTE_OFFSET = {
 } as const;
 const MONITOR_EXTRA_WIDTH = 88;
 const MONITOR_EXTRA_HEIGHT = 96;
-export const INDEXED_16_COLOR_PALETTE = PAINT_APP_PALETTE;
 
 export type MenuId = "file" | "edit" | "view";
 
@@ -195,8 +192,4 @@ export function getPaletteIndexAtPoint({
 
   const index = row * TOOL_PALETTE_COLUMNS + column;
   return index < colorCount ? index : null;
-}
-
-export function quantizeToIndexedPalette(color: string): string {
-  return quantizeToPaintPalette(color);
 }

@@ -8,11 +8,10 @@ import {
   getPaintPalette,
   type PaintPaletteId,
 } from "../lib/palette";
-import { getStorageKey } from "./utils";
 
 export type PaintTool = "pencil" | "line" | "fill" | "erase";
 
-const PAINT_STORE_KEY = getStorageKey("paint");
+const PAINT_STORE_KEY = "sirajchokshi$paint@paint";
 
 export interface PaintStore {
   selectedColor: string;
