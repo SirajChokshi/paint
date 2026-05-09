@@ -12,6 +12,12 @@ export const AUTOPALETTE_MIN_DISTANCE = 0.08;
 const MAX_SAMPLED_PIXELS = 12_000;
 const SOURCE_MAX_DIMENSION = 96;
 const CHANNEL_BUCKET_SHIFT = 3;
+const FOCAL_GRID_SIZE = 12;
+const BACKGROUND_SAMPLE_WEIGHT = 0.08;
+const FOREGROUND_SAMPLE_WEIGHT = 7.5;
+const FOREGROUND_RADIUS = 0.24;
+const BACKGROUND_COLOR_LIMIT = 5;
+const BACKGROUND_FOCUS_THRESHOLD = 0.35;
 
 interface LabColor {
   l: number;
@@ -21,8 +27,19 @@ interface LabColor {
 
 interface ColorCandidate extends RgbColor {
   count: number;
+  focus: number;
   hex: string;
   lab: LabColor;
+}
+
+export interface AutopaletteFocalPoint {
+  x: number;
+  y: number;
+}
+
+export interface AutopaletteAnalysis {
+  focalPoint: AutopaletteFocalPoint;
+  palette: Palette;
 }
 
 function shouldUseAnonymousCors(source: string): boolean {
@@ -39,6 +56,32 @@ function channelToHex(value: number): string {
 
 function rgbToHex(color: RgbColor): string {
   return `#${channelToHex(color.r)}${channelToHex(color.g)}${channelToHex(color.b)}`;
+}
+
+function getPixelOffset(imageData: ImageData, x: number, y: number): number {
+  return (y * imageData.width + x) * 4;
+}
+
+function getPixelRgb(imageData: ImageData, x: number, y: number): RgbColor {
+  const offset = getPixelOffset(imageData, x, y);
+  const alpha = imageData.data[offset + 3] / 255;
+
+  return {
+    r: clampChannel(imageData.data[offset] * alpha + 255 * (1 - alpha)),
+    g: clampChannel(imageData.data[offset + 1] * alpha + 255 * (1 - alpha)),
+    b: clampChannel(imageData.data[offset + 2] * alpha + 255 * (1 - alpha)),
+  };
+}
+
+function getLuminance(color: RgbColor): number {
+  return color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722;
+}
+
+function getSaturation(color: RgbColor): number {
+  const max = Math.max(color.r, color.g, color.b);
+  const min = Math.min(color.r, color.g, color.b);
+
+  return max === 0 ? 0 : (max - min) / max;
 }
 
 function srgbToLinear(value: number): number {
@@ -91,12 +134,17 @@ function isDistinctEnough(color: RgbColor, selected: readonly RgbColor[]): boole
   return minDistanceToSelected(color, selected) >= AUTOPALETTE_MIN_DISTANCE;
 }
 
-function toCandidate(color: RgbColor, count: number): ColorCandidate {
+function toCandidate(
+  color: RgbColor,
+  count: number,
+  focus = 1,
+): ColorCandidate {
   return {
     r: color.r,
     g: color.g,
     b: color.b,
     count,
+    focus,
     hex: rgbToHex(color),
     lab: rgbToOklab(color),
   };
@@ -122,32 +170,125 @@ function addCandidate(
   return true;
 }
 
-function extractColorCandidates(imageData: ImageData): ColorCandidate[] {
+function detectFocalPoint(imageData: ImageData): AutopaletteFocalPoint {
+  const gridWidth = Math.min(FOCAL_GRID_SIZE, imageData.width);
+  const gridHeight = Math.min(FOCAL_GRID_SIZE, imageData.height);
+  const scores = Array.from(
+    { length: gridWidth * gridHeight },
+    () => ({ score: 0, weight: 0, x: 0, y: 0 }),
+  );
+  const pixelCount = imageData.width * imageData.height;
+  const step = Math.max(1, Math.floor(pixelCount / MAX_SAMPLED_PIXELS));
+
+  for (let pixelIndex = 0; pixelIndex < pixelCount; pixelIndex += step) {
+    const x = pixelIndex % imageData.width;
+    const y = Math.floor(pixelIndex / imageData.width);
+    const color = getPixelRgb(imageData, x, y);
+    const right = getPixelRgb(imageData, Math.min(imageData.width - 1, x + 1), y);
+    const down = getPixelRgb(imageData, x, Math.min(imageData.height - 1, y + 1));
+    const edge =
+      Math.abs(getLuminance(color) - getLuminance(right)) +
+      Math.abs(getLuminance(color) - getLuminance(down));
+    const normalizedX = imageData.width <= 1 ? 0.5 : x / (imageData.width - 1);
+    const normalizedY = imageData.height <= 1 ? 0.5 : y / (imageData.height - 1);
+    const centerDistance = Math.hypot(normalizedX - 0.5, normalizedY - 0.5);
+    const centerBias = Math.max(0.35, 1 - centerDistance * 0.9);
+    const saturation = getSaturation(color);
+    const saliency = (edge / 255 + saturation * 0.35) * centerBias;
+    const gridX = Math.min(gridWidth - 1, Math.floor(normalizedX * gridWidth));
+    const gridY = Math.min(gridHeight - 1, Math.floor(normalizedY * gridHeight));
+    const cell = scores[gridY * gridWidth + gridX];
+
+    cell.score += saliency;
+    cell.weight += 1;
+    cell.x += normalizedX;
+    cell.y += normalizedY;
+  }
+
+  const bestCell = scores.reduce((best, cell) => {
+    const bestScore = best.weight === 0 ? 0 : best.score / best.weight;
+    const cellScore = cell.weight === 0 ? 0 : cell.score / cell.weight;
+
+    return cellScore > bestScore ? cell : best;
+  }, scores[0]);
+
+  if (!bestCell || bestCell.weight === 0) {
+    return { x: 0.5, y: 0.5 };
+  }
+
+  return {
+    x: bestCell.x / bestCell.weight,
+    y: bestCell.y / bestCell.weight,
+  };
+}
+
+function getFocalWeight(
+  x: number,
+  y: number,
+  imageData: ImageData,
+  focalPoint: AutopaletteFocalPoint,
+): number {
+  const normalizedX = imageData.width <= 1 ? 0.5 : x / (imageData.width - 1);
+  const normalizedY = imageData.height <= 1 ? 0.5 : y / (imageData.height - 1);
+  const distance = Math.hypot(
+    normalizedX - focalPoint.x,
+    normalizedY - focalPoint.y,
+  );
+  const foreground = Math.exp(-(distance ** 2) / (2 * FOREGROUND_RADIUS ** 2));
+
+  return BACKGROUND_SAMPLE_WEIGHT + FOREGROUND_SAMPLE_WEIGHT * foreground;
+}
+
+function getFocalStrength(
+  x: number,
+  y: number,
+  imageData: ImageData,
+  focalPoint: AutopaletteFocalPoint,
+): number {
+  const normalizedX = imageData.width <= 1 ? 0.5 : x / (imageData.width - 1);
+  const normalizedY = imageData.height <= 1 ? 0.5 : y / (imageData.height - 1);
+  const distance = Math.hypot(
+    normalizedX - focalPoint.x,
+    normalizedY - focalPoint.y,
+  );
+
+  return Math.exp(-(distance ** 2) / (2 * FOREGROUND_RADIUS ** 2));
+}
+
+function extractColorCandidates(
+  imageData: ImageData,
+  focalPoint: AutopaletteFocalPoint,
+): ColorCandidate[] {
   const buckets = new Map<
     string,
-    { r: number; g: number; b: number; count: number }
+    { r: number; g: number; b: number; count: number; focus: number }
   >();
   const pixelCount = Math.floor(imageData.data.length / 4);
   const step = Math.max(1, Math.floor(pixelCount / MAX_SAMPLED_PIXELS));
 
   for (let pixelIndex = 0; pixelIndex < pixelCount; pixelIndex += step) {
-    const offset = pixelIndex * 4;
-    const alpha = imageData.data[offset + 3] / 255;
-    const color = {
-      r: clampChannel(imageData.data[offset] * alpha + 255 * (1 - alpha)),
-      g: clampChannel(imageData.data[offset + 1] * alpha + 255 * (1 - alpha)),
-      b: clampChannel(imageData.data[offset + 2] * alpha + 255 * (1 - alpha)),
-    };
+    const x = pixelIndex % imageData.width;
+    const y = Math.floor(pixelIndex / imageData.width);
+    const color = getPixelRgb(imageData, x, y);
+    const weight = getFocalWeight(x, y, imageData, focalPoint);
+    const focus = getFocalStrength(x, y, imageData, focalPoint);
     const key = `${color.r >> CHANNEL_BUCKET_SHIFT}:${color.g >> CHANNEL_BUCKET_SHIFT}:${color.b >> CHANNEL_BUCKET_SHIFT}`;
     const bucket = buckets.get(key);
 
     if (bucket) {
-      bucket.r += color.r;
-      bucket.g += color.g;
-      bucket.b += color.b;
-      bucket.count += 1;
+      bucket.r += color.r * weight;
+      bucket.g += color.g * weight;
+      bucket.b += color.b * weight;
+      bucket.count += weight;
+      bucket.focus += focus * weight;
     } else {
-      buckets.set(key, { ...color, count: 1 });
+      buckets.set(key, {
+        r: color.r * weight,
+        g: color.g * weight,
+        b: color.b * weight,
+        count: weight,
+        focus: focus * weight,
+      });
     }
   }
 
@@ -160,6 +301,7 @@ function extractColorCandidates(imageData: ImageData): ColorCandidate[] {
           b: bucket.b / bucket.count,
         },
         bucket.count,
+        bucket.focus / bucket.count,
       ),
     )
     .sort((first, second) => second.count - first.count);
@@ -211,6 +353,7 @@ function scoreCandidate(
   const frequencyScore = Math.log1p(candidate.count) / maxLogCount;
   const distance = minDistanceToSelected(candidate, selected);
   const distanceScore = selected.length === 0 ? 1 : Math.min(distance / 0.38, 1);
+  const focusScore = Math.min(candidate.focus, 1);
   const band = getLuminanceBand(candidate);
   const hasBand = selected.some((selectedCandidate) =>
     getLuminanceBand(selectedCandidate) === band,
@@ -218,7 +361,13 @@ function scoreCandidate(
   const bandScore = hasBand ? 0 : 0.12;
   const contrastScore = Math.abs(candidate.lab.l - 0.5) * 0.12;
 
-  return frequencyScore * 0.54 + distanceScore * 0.34 + bandScore + contrastScore;
+  return (
+    focusScore * 0.4 +
+    frequencyScore * 0.34 +
+    distanceScore * 0.22 +
+    bandScore +
+    contrastScore
+  );
 }
 
 function addImageColors(candidates: ColorCandidate[], selected: ColorCandidate[]) {
@@ -234,6 +383,18 @@ function addImageColors(candidates: ColorCandidate[], selected: ColorCandidate[]
       }
 
       if (!isDistinctEnough(candidate, selected)) {
+        continue;
+      }
+
+      const selectedBackgroundColors = selected.filter(
+        (selectedCandidate) =>
+          selectedCandidate.count > 0 &&
+          selectedCandidate.focus < BACKGROUND_FOCUS_THRESHOLD,
+      ).length;
+      if (
+        candidate.focus < BACKGROUND_FOCUS_THRESHOLD &&
+        selectedBackgroundColors >= BACKGROUND_COLOR_LIMIT
+      ) {
         continue;
       }
 
@@ -303,17 +464,27 @@ export function getAutopaletteColorDistance(first: string, second: string): numb
   return colorDistance(rgbFromHex(first), rgbFromHex(second));
 }
 
-export function createAutopaletteFromImageData(imageData: ImageData): Palette {
-  const candidates = extractColorCandidates(imageData);
+export function analyzeAutopaletteImageData(
+  imageData: ImageData,
+): AutopaletteAnalysis {
+  const focalPoint = detectFocalPoint(imageData);
+  const candidates = extractColorCandidates(imageData, focalPoint);
   const selected: ColorCandidate[] = [];
 
   addContrastAnchors(candidates, selected);
   addImageColors(candidates, selected);
   addToyboxBackfill(selected);
 
-  return selected
-    .slice(0, AUTOPALETTE_COLOR_COUNT)
-    .map((candidate) => candidate.hex);
+  return {
+    focalPoint,
+    palette: selected
+      .slice(0, AUTOPALETTE_COLOR_COUNT)
+      .map((candidate) => candidate.hex),
+  };
+}
+
+export function createAutopaletteFromImageData(imageData: ImageData): Palette {
+  return analyzeAutopaletteImageData(imageData).palette;
 }
 
 export function createAutopaletteFromImageSource(source: string): Promise<Palette> {
