@@ -8,14 +8,9 @@ import {
   PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
   PAINT_APP_VIRTUAL_SCREEN_WIDTH,
 } from "./lib/virtualScreen";
+import { WINDOW_IDS } from "./lib/windowIds";
 import Window from "./components/Window";
 import { AboutWindow } from "./components/windows/about-window";
-
-export const WINDOW_IDS = {
-  tools: "tools",
-  canvas: "canvas",
-  about: "about",
-} as const;
 
 const DevImportTestPage = import.meta.env.DEV
   ? lazy(() => import("./components/dev/ImportTestPage"))

@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import Window from "../Window";
 import { useWindowStore } from "../../stores/windowStore";
+import { WINDOW_IDS } from "../../lib/windowIds";
 
 const Inner = styled.div`
   width: 320px;
@@ -93,7 +94,12 @@ export function AboutWindow() {
   const { removeWindow } = useWindowStore();
 
   return (
-    <Window startClosed alwaysOnTop id="about">
+    <Window
+      title="About Pixel Paint"
+      startClosed
+      alwaysOnTop
+      id={WINDOW_IDS.about}
+    >
       <Inner>
         <h1>Pixel Paint</h1>
         <p>
@@ -129,7 +135,7 @@ export function AboutWindow() {
         </footer>
         <MacButton
           onClick={() => {
-            removeWindow("about");
+            removeWindow(WINDOW_IDS.about);
           }}
         >
           OK
