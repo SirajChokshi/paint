@@ -3,7 +3,7 @@ import Window from "../Window";
 import { WINDOW_IDS } from "../../lib/windowIds";
 
 const Inner = styled.div`
-  width: 320px;
+  width: 216px;
   padding: 16px;
   font-family: var(--chicago);
   font-size: 12px;
