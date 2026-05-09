@@ -12,6 +12,7 @@ import {
   getPixelImportErrorMessage,
   reportPixelImportError,
 } from "../../lib/importPixelImage";
+import { createAutopaletteFromImageSource } from "../../lib/autopalette";
 import { WINDOW_IDS } from "../../lib/windowIds";
 
 const MenubarWrapper = styled(Toolbar.Root)`
@@ -48,8 +49,10 @@ const MenubarWrapper = styled(Toolbar.Root)`
 export default function Menubar() {
   const { addWindow, getWindow, removeWindow } = useWindowStore();
   const { save, files } = useFileStore();
-  const { paletteId, setPaletteId } = usePaintStore();
+  const { paletteId, customPalette, setPaletteId, setCustomPalette } =
+    usePaintStore();
   const importInputRef = useRef<HTMLInputElement>(null);
+  const importAutopaletteInputRef = useRef<HTMLInputElement>(null);
   const [historyState, setHistoryState] = useState(canvasHistory.getState());
 
   useEffect(() => {
@@ -77,6 +80,32 @@ export default function Menubar() {
     reader.readAsDataURL(file);
   }
 
+  function importAutopalette(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        return;
+      }
+
+      const source = reader.result;
+      void createAutopaletteFromImageSource(source)
+        .then(async (palette) => {
+          await canvasHistory.importWithPalette(source, palette);
+          setCustomPalette(palette);
+        })
+        .catch((error) => {
+          reportInteractiveImportError(error);
+        });
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <MenubarWrapper className="font-sm">
       <input
@@ -85,6 +114,13 @@ export default function Menubar() {
         accept="image/*"
         hidden
         onChange={importImage}
+      />
+      <input
+        ref={importAutopaletteInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={importAutopalette}
       />
       <Menu
         actions={[
@@ -105,10 +141,20 @@ export default function Menubar() {
             items: [
               {
                 name: "Palette",
-                items: PAINT_APP_PALETTE_IDS.map((id) => ({
-                  name: `${paletteId === id ? "✓" : " "} ${PAINT_APP_PALETTES[id].name}`,
-                  onClick: () => setPaletteId(id),
-                })),
+                items: [
+                  ...PAINT_APP_PALETTE_IDS.map((id) => ({
+                    name: `${!customPalette && paletteId === id ? "✓" : " "} ${PAINT_APP_PALETTES[id].name}`,
+                    onClick: () => setPaletteId(id),
+                  })),
+                  ...(customPalette
+                    ? [
+                        {
+                          name: "✓ Image Autopalette",
+                          onClick: () => setCustomPalette(customPalette),
+                        },
+                      ]
+                    : []),
+                ],
               },
             ],
           },
@@ -166,6 +212,10 @@ export default function Menubar() {
           {
             name: "Import",
             onClick: () => importInputRef.current?.click(),
+          },
+          {
+            name: "Import Autopalette",
+            onClick: () => importAutopaletteInputRef.current?.click(),
           },
         ]}
       >

@@ -1,4 +1,8 @@
-import { PixelCanvas, PixelCanvasImportOptions } from "pixel-paint";
+import {
+  PixelCanvas,
+  type Palette,
+  type PixelCanvasImportOptions,
+} from "pixel-paint";
 import { HistoryStackService, HistoryStackState } from "./historyStack";
 
 export type CanvasSnapshot = ImageData;
@@ -138,6 +142,29 @@ export class CanvasHistoryService {
     return this.runAsyncTransaction(async () => {
       plugin.clear();
       await this.callUntrackedImport(data, options);
+    });
+  }
+
+  importWithPalette(
+    data: string,
+    palette: Palette,
+    options: PixelCanvasImportOptions = {},
+  ) {
+    const pixelCanvas = this.pixelCanvas;
+    const plugin = this.plugin;
+    if (!pixelCanvas || !plugin) {
+      return Promise.reject(new Error("Canvas import plugin is not installed"));
+    }
+
+    const previousPalette = pixelCanvas.palette;
+    return this.runAsyncTransaction(async () => {
+      plugin.setPalette(palette, { remap: false });
+      try {
+        await this.callUntrackedImport(data, options);
+      } catch (error) {
+        plugin.setPalette(previousPalette, { remap: false });
+        throw error;
+      }
     });
   }
 
