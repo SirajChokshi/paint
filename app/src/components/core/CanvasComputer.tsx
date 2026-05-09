@@ -330,7 +330,7 @@ export default function CanvasComputer() {
     })
   );
   const [activeMenu, setActiveMenu] = useState<MenuId | null>(null);
-  const [selectedColor, setSelectedColor] = useState(TOOL_COLORS[0]);
+  const [selectedColor, setSelectedColor] = useState<string>(TOOL_COLORS[0]);
   const [windows, setWindows] = useState<CanvasWindow[]>([
     { id: "tools", x: 14, y: 32, width: 106, height: 220, title: "Tools" },
     { id: "paint", x: 154, y: 34, width: 324, height: 230, title: "Untitled" },
