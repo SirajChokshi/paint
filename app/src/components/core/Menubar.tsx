@@ -6,10 +6,7 @@ import { FrameBus } from "../../lib/frame";
 import { Menu } from "./Menu";
 import { useWindowStore } from "../../stores/windowStore";
 import { PAINT_APP_PALETTE_IDS, PAINT_APP_PALETTES } from "../../lib/palette";
-import {
-  getActivePaintPalette,
-  usePaintStore,
-} from "../../stores/paintStore";
+import { usePaintStore } from "../../stores/paintStore";
 import { canvasHistory } from "../../services/canvasHistory";
 import {
   getPixelImportErrorMessage,
@@ -97,14 +94,12 @@ export default function Menubar() {
       }
 
       const source = reader.result;
-      const previousPalette = getActivePaintPalette(usePaintStore.getState());
       void createAutopaletteFromImageSource(source)
         .then(async (palette) => {
           await canvasHistory.importWithPalette(source, palette);
           setCustomPalette(palette);
         })
         .catch((error) => {
-          window.pixel?.setPalette(previousPalette, { remap: false });
           reportInteractiveImportError(error);
         });
     };

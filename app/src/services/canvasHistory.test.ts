@@ -187,4 +187,12 @@ describe("CanvasHistoryService", () => {
     expect(pixelCanvas.palette).toBe(previousPalette);
     expect(renderer.value).toBe(5);
   });
+
+  it("rejects an import with a palette when the canvas is unavailable", async () => {
+    const history = new CanvasHistoryService();
+
+    await expect(history.importWithPalette("data", ["#ffffff"])).rejects.toThrow(
+      "Canvas import plugin is not installed",
+    );
+  });
 });

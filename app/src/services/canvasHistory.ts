@@ -153,7 +153,7 @@ export class CanvasHistoryService {
     const pixelCanvas = this.pixelCanvas;
     const plugin = this.plugin;
     if (!pixelCanvas || !plugin) {
-      return Promise.resolve();
+      return Promise.reject(new Error("Canvas import plugin is not installed"));
     }
 
     const previousPalette = pixelCanvas.palette;
