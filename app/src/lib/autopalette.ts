@@ -272,21 +272,30 @@ function addToyboxBackfill(selected: ColorCandidate[]) {
     });
 
   for (const { candidate } of backfill) {
-    if (selected.length >= AUTOPALETTE_COLOR_COUNT) {
-      return;
-    }
+    if (selected.length >= AUTOPALETTE_COLOR_COUNT) return;
 
     addCandidate(candidate, selected);
   }
 
-  for (const { candidate } of backfill) {
-    if (selected.length >= AUTOPALETTE_COLOR_COUNT) {
+  while (selected.length < AUTOPALETTE_COLOR_COUNT) {
+    const nextBackfill = backfill.find(({ candidate }) =>
+      !selected.some((selectedCandidate) => selectedCandidate.hex === candidate.hex) &&
+      isDistinctEnough(candidate, selected),
+    );
+
+    if (nextBackfill) {
+      selected.push(nextBackfill.candidate);
+      continue;
+    }
+
+    const removableImageColorIndex = selected.findLastIndex(
+      (candidate) => candidate.count > 0,
+    );
+    if (removableImageColorIndex === -1) {
       return;
     }
 
-    if (!selected.some((selectedCandidate) => selectedCandidate.hex === candidate.hex)) {
-      selected.push(candidate);
-    }
+    selected.splice(removableImageColorIndex, 1);
   }
 }
 
