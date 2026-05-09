@@ -5,7 +5,6 @@ import { useFileStore } from "../../stores/fileStore";
 import { FrameBus } from "../../lib/frame";
 import { Menu } from "./Menu";
 import { useWindowStore } from "../../stores/windowStore";
-import { WINDOW_IDS } from "../../App";
 import { PAINT_APP_PALETTE_IDS, PAINT_APP_PALETTES } from "../../lib/palette";
 import {
   getActivePaintPalette,
@@ -17,6 +16,7 @@ import {
   reportPixelImportError,
 } from "../../lib/importPixelImage";
 import { createAutopaletteFromImageSource } from "../../lib/autopalette";
+import { WINDOW_IDS } from "../../lib/windowIds";
 
 const MenubarWrapper = styled(Toolbar.Root)`
   display: flex;
