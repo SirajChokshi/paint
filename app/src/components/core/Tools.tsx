@@ -1,19 +1,9 @@
 import styled from "@emotion/styled";
-import { useEffect, useState } from "react";
 import {
   getActivePaintPalette,
+  type PaintTool,
   usePaintStore,
 } from "../../stores/paintStore";
-
-export type DrawMode = "pencil" | "line" | "fill";
-type Tool = DrawMode | "erase";
-
-const TOOL_TO_MODE: Record<Tool, DrawMode> = {
-  pencil: "pencil",
-  line: "line",
-  fill: "fill",
-  erase: "pencil",
-};
 
 const ToolGrid = styled.div`
   display: flex;
@@ -255,7 +245,6 @@ const ColorGrid = styled.div`
 `;
 
 export default function Tools() {
-  const [tool, setTool] = useState<Tool>("pencil");
   const {
     paletteId,
     customPalette,
@@ -268,27 +257,14 @@ export default function Tools() {
   } = usePaintStore();
   const palette = getActivePaintPalette({ paletteId, customPalette });
 
-  useEffect(() => {
-    setTool((currentTool) => {
-      if (currentTool === "erase") return currentTool;
-
-      return currentTool === toolMode ? currentTool : toolMode;
-    });
-  }, [toolMode]);
-
-  function setToolMode(t: Tool) {
-    setStoreToolMode(TOOL_TO_MODE[t]);
-    setTool(t);
-  }
-
   function setColor(color: string) {
     setSelectedColor(color);
     if (!window.pixel) return;
     window.pixel.color = color;
   }
 
-  function selectTool(t: Tool) {
-    setToolMode(t);
+  function selectTool(t: PaintTool) {
+    setStoreToolMode(t);
     if (t === "erase") {
       setColor("#ffffff");
     } else if (t === "pencil") {
@@ -300,7 +276,7 @@ export default function Tools() {
     <ToolGrid>
       <ToolSection>
         <ToolButton
-          isActive={tool === "pencil"}
+          isActive={toolMode === "pencil"}
           onClick={() => selectTool("pencil")}
           title="Pencil"
         >
@@ -308,7 +284,7 @@ export default function Tools() {
           <ToolLabel>Pencil</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={tool === "line"}
+          isActive={toolMode === "line"}
           onClick={() => selectTool("line")}
           title="Line"
         >
@@ -316,7 +292,7 @@ export default function Tools() {
           <ToolLabel>Line</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={tool === "fill"}
+          isActive={toolMode === "fill"}
           onClick={() => selectTool("fill")}
           title="Fill"
         >
@@ -324,7 +300,7 @@ export default function Tools() {
           <ToolLabel>Fill</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={tool === "erase"}
+          isActive={toolMode === "erase"}
           onClick={() => selectTool("erase")}
           title="Eraser"
         >
@@ -343,7 +319,7 @@ export default function Tools() {
           <ColorSwatch
             key={color}
             swatchColor={color}
-            isSelected={selectedColorIndex === colorIndex && tool !== "erase"}
+            isSelected={selectedColorIndex === colorIndex && toolMode !== "erase"}
             aria-label={`Set drawing color to ${color}`}
             title={color}
             onClick={() => {
@@ -351,8 +327,8 @@ export default function Tools() {
               if (window.pixel) {
                 window.pixel.color = color;
               }
-              if (tool === "erase") {
-                setToolMode("pencil");
+              if (toolMode === "erase") {
+                setStoreToolMode("pencil");
               }
             }}
           />

@@ -8,6 +8,7 @@ import {
   PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
   PAINT_APP_VIRTUAL_SCREEN_WIDTH,
   snapPointToGrid,
+  type Point,
 } from "../../lib/virtualScreen";
 import {
   getActivePaintPalette,
@@ -56,26 +57,6 @@ const StyledCanvas = styled.canvas`
   cursor: none;
   position: relative;
 `;
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-function getCanvasPoint(
-  canvas: HTMLCanvasElement,
-  clientX: number,
-  clientY: number
-): Point {
-  const rect = canvas.getBoundingClientRect();
-  return calculateCanvasPoint({
-    canvasWidth: canvas.width,
-    canvasHeight: canvas.height,
-    rect,
-    clientX,
-    clientY,
-  });
-}
 
 export default function PixelCanvasRenderer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -224,7 +205,13 @@ export default function PixelCanvasRenderer() {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
-    const point = getCanvasPoint(canvas, e.clientX, e.clientY);
+    const point = calculateCanvasPoint({
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      rect: canvas.getBoundingClientRect(),
+      clientX: e.clientX,
+      clientY: e.clientY,
+    });
     const snappedPoint = snapPointToGrid(point, BRUSH_SIZE);
     setCursorPoint(snappedPoint);
 
