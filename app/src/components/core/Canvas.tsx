@@ -17,6 +17,7 @@ import {
 import { canvasHistory } from "../../services/canvasHistory";
 
 const BRUSH_SIZE = 5;
+const ERASER_COLOR = "#ffffff";
 
 const CanvasWrapper = styled.div`
   background: var(--mac-white);
@@ -67,6 +68,7 @@ export default function PixelCanvasRenderer() {
   const linePreviewSnapshot = useRef<ImageData | null>(null);
   const palette = usePaintStore(getActivePaintPalette);
   const selectedColor = usePaintStore((state) => state.selectedColor);
+  const toolMode = usePaintStore((state) => state.toolMode);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
   const [cursorPoint, setCursorPoint] = useState<Point | null>(null);
@@ -118,8 +120,8 @@ export default function PixelCanvasRenderer() {
   useEffect(() => {
     if (!pa) return;
 
-    pa.color = selectedColor;
-  }, [pa, selectedColor]);
+    pa.color = toolMode === "erase" ? ERASER_COLOR : selectedColor;
+  }, [pa, selectedColor, toolMode]);
 
   useEffect(() => {
     if (!pa) return;
@@ -191,6 +193,7 @@ export default function PixelCanvasRenderer() {
   function drawSegment(from: Point, to: Point) {
     if (!pa) return;
 
+    syncActiveColor();
     pa.beginPath();
     pa.moveTo(from.x, from.y);
     pa.lineTo(to.x, to.y);
@@ -199,6 +202,13 @@ export default function PixelCanvasRenderer() {
 
   function getActiveTool() {
     return usePaintStore.getState().toolMode;
+  }
+
+  function syncActiveColor() {
+    if (!pa) return;
+
+    const state = usePaintStore.getState();
+    pa.color = state.toolMode === "erase" ? ERASER_COLOR : state.selectedColor;
   }
 
   function moveCursor(e: React.PointerEvent<HTMLCanvasElement>) {
@@ -239,6 +249,7 @@ export default function PixelCanvasRenderer() {
             const tool = getActiveTool();
 
             if (tool === "fill") {
+              syncActiveColor();
               pa.fill(point.x, point.y);
               return;
             }

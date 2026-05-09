@@ -1,7 +1,6 @@
 import styled from "@emotion/styled";
 import {
   getActivePaintPalette,
-  type PaintTool,
   usePaintStore,
 } from "../../stores/paintStore";
 
@@ -250,34 +249,18 @@ export default function Tools() {
     customPalette,
     selectedColor,
     selectedColorIndex,
-    setSelectedColor,
     setSelectedColorIndex,
     toolMode,
     setToolMode: setStoreToolMode,
   } = usePaintStore();
   const palette = getActivePaintPalette({ paletteId, customPalette });
 
-  function setColor(color: string) {
-    setSelectedColor(color);
-    if (!window.pixel) return;
-    window.pixel.color = color;
-  }
-
-  function selectTool(t: PaintTool) {
-    setStoreToolMode(t);
-    if (t === "erase") {
-      setColor("#ffffff");
-    } else if (t === "pencil") {
-      setColor(selectedColor === "#ffffff" ? "#000000" : selectedColor);
-    }
-  }
-
   return (
     <ToolGrid>
       <ToolSection>
         <ToolButton
           isActive={toolMode === "pencil"}
-          onClick={() => selectTool("pencil")}
+          onClick={() => setStoreToolMode("pencil")}
           title="Pencil"
         >
           <PencilIcon />
@@ -285,7 +268,7 @@ export default function Tools() {
         </ToolButton>
         <ToolButton
           isActive={toolMode === "line"}
-          onClick={() => selectTool("line")}
+          onClick={() => setStoreToolMode("line")}
           title="Line"
         >
           <LineIcon />
@@ -293,7 +276,7 @@ export default function Tools() {
         </ToolButton>
         <ToolButton
           isActive={toolMode === "fill"}
-          onClick={() => selectTool("fill")}
+          onClick={() => setStoreToolMode("fill")}
           title="Fill"
         >
           <FillIcon />
@@ -301,7 +284,7 @@ export default function Tools() {
         </ToolButton>
         <ToolButton
           isActive={toolMode === "erase"}
-          onClick={() => selectTool("erase")}
+          onClick={() => setStoreToolMode("erase")}
           title="Eraser"
         >
           <EraseIcon />
@@ -324,9 +307,6 @@ export default function Tools() {
             title={color}
             onClick={() => {
               setSelectedColorIndex(colorIndex);
-              if (window.pixel) {
-                window.pixel.color = color;
-              }
               if (toolMode === "erase") {
                 setStoreToolMode("pencil");
               }
