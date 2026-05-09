@@ -142,6 +142,7 @@ export default function PixelCanvasRenderer() {
 
   useEffect(() => {
     if (!pa) return;
+    if (pa.palette === palette) return;
 
     pa.setPalette(palette, { remap: true });
   }, [pa, palette]);

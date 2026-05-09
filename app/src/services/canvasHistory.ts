@@ -156,9 +156,15 @@ export class CanvasHistoryService {
       return Promise.resolve();
     }
 
+    const previousPalette = pixelCanvas.palette;
     return this.runAsyncTransaction(async () => {
       plugin.setPalette(palette, { remap: false });
-      await this.callUntrackedImport(data, options);
+      try {
+        await this.callUntrackedImport(data, options);
+      } catch (error) {
+        plugin.setPalette(previousPalette, { remap: false });
+        throw error;
+      }
     });
   }
 

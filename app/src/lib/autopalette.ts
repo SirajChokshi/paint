@@ -398,6 +398,11 @@ function addImageColors(candidates: ColorCandidate[], selected: ColorCandidate[]
   while (selected.length < AUTOPALETTE_COLOR_COUNT) {
     let bestCandidate: ColorCandidate | undefined;
     let bestScore = Number.NEGATIVE_INFINITY;
+    const selectedBackgroundColors = selected.filter(
+      (selectedCandidate) =>
+        selectedCandidate.count > 0 &&
+        selectedCandidate.focus < BACKGROUND_FOCUS_THRESHOLD,
+    ).length;
 
     for (const candidate of candidates) {
       if (selected.some((selectedCandidate) => selectedCandidate.hex === candidate.hex)) {
@@ -408,11 +413,6 @@ function addImageColors(candidates: ColorCandidate[], selected: ColorCandidate[]
         continue;
       }
 
-      const selectedBackgroundColors = selected.filter(
-        (selectedCandidate) =>
-          selectedCandidate.count > 0 &&
-          selectedCandidate.focus < BACKGROUND_FOCUS_THRESHOLD,
-      ).length;
       if (
         candidate.focus < BACKGROUND_FOCUS_THRESHOLD &&
         selectedBackgroundColors >= BACKGROUND_COLOR_LIMIT

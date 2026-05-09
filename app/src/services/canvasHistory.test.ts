@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { PixelCanvas } from "pixel-paint";
+import { PixelCanvas, type Palette } from "pixel-paint";
 import { HistoryStackState } from "./historyStack";
 import { CanvasHistoryService } from "./canvasHistory";
 
@@ -85,6 +85,31 @@ function createPixelCanvasWithDeferredImport(initialValue: number) {
   return { pixelCanvas, renderer, deferred };
 }
 
+function createPixelCanvasWithFailingImport(
+  initialValue: number,
+  initialPalette: Palette,
+) {
+  const renderer = new TestCanvasRenderer(initialValue);
+  let currentPalette = initialPalette;
+  const pixelCanvas = {
+    renderer,
+    get palette() {
+      return currentPalette;
+    },
+    clear: () => renderer.setValue(0),
+    fill: () => renderer.setValue(1),
+    setPalette(palette: Palette) {
+      currentPalette = palette;
+    },
+    import: async () => {
+      renderer.setValue(9);
+      throw new Error("import failed");
+    },
+  } as unknown as PixelCanvas;
+
+  return { pixelCanvas, renderer };
+}
+
 beforeAll(() => {
   globalThis.ImageData = TestImageData as typeof ImageData;
 });
@@ -143,5 +168,23 @@ describe("CanvasHistoryService", () => {
     await expect(history.import("2")).rejects.toThrow(
       "Canvas import plugin is not installed",
     );
+  });
+
+  it("restores the previous palette when an import with a palette fails", async () => {
+    const history = new CanvasHistoryService();
+    const previousPalette = ["#000000"];
+    const nextPalette = ["#ffffff"];
+    const { pixelCanvas, renderer } = createPixelCanvasWithFailingImport(
+      5,
+      previousPalette,
+    );
+
+    history.bind(pixelCanvas);
+
+    await expect(history.importWithPalette("data", nextPalette)).rejects.toThrow(
+      "import failed",
+    );
+    expect(pixelCanvas.palette).toBe(previousPalette);
+    expect(renderer.value).toBe(5);
   });
 });
