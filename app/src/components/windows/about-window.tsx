@@ -1,9 +1,9 @@
 import styled from "@emotion/styled";
 import Window from "../Window";
-import { useWindowStore } from "../../stores/windowStore";
+import { WINDOW_IDS } from "../../lib/windowIds";
 
 const Inner = styled.div`
-  width: 320px;
+  width: 216px;
   padding: 16px;
   font-family: var(--chicago);
   font-size: 12px;
@@ -61,39 +61,14 @@ const Inner = styled.div`
   }
 `;
 
-const MacButton = styled.button`
-  all: unset;
-  box-sizing: border-box;
-  display: block;
-  width: 80px;
-  height: 20px;
-  margin: 6px auto 0;
-  text-align: center;
-  line-height: 18px;
-  font-family: var(--chicago);
-  font-size: 12px;
-  cursor: default;
-
-  background: var(--mac-white);
-  color: var(--mac-black);
-  border: 2px solid var(--mac-black);
-  border-radius: 6px;
-
-  /* Default button double-border ring */
-  outline: 1px solid var(--mac-black);
-  outline-offset: 1px;
-
-  &:active {
-    background: var(--mac-black);
-    color: var(--mac-white);
-  }
-`;
-
 export function AboutWindow() {
-  const { removeWindow } = useWindowStore();
-
   return (
-    <Window startClosed alwaysOnTop id="about">
+    <Window
+      title="About Pixel Paint"
+      startClosed
+      alwaysOnTop
+      id={WINDOW_IDS.about}
+    >
       <Inner>
         <h1>Pixel Paint</h1>
         <p>
@@ -127,13 +102,6 @@ export function AboutWindow() {
           <br />
           All rights reserved.
         </footer>
-        <MacButton
-          onClick={() => {
-            removeWindow("about");
-          }}
-        >
-          OK
-        </MacButton>
       </Inner>
     </Window>
   );
