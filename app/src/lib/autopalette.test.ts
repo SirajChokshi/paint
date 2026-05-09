@@ -199,4 +199,51 @@ describe("createAutopaletteFromImageData", () => {
     expect(subjectMatches).toBeGreaterThanOrEqual(8);
     expect(backgroundMatches).toBeLessThanOrEqual(5);
   });
+
+  it("keeps a muted face-like subject ahead of a saturated busy background", () => {
+    const backgroundColors = [
+      "#103f9f",
+      "#0f6ccf",
+      "#108f7a",
+      "#65a812",
+      "#b58d0f",
+      "#b55212",
+      "#8b1d7a",
+      "#3a188c",
+    ];
+    const subjectColors = [
+      "#2b211d",
+      "#4a3128",
+      "#765245",
+      "#987060",
+      "#b58a78",
+      "#d0a992",
+      "#e3c2aa",
+      "#f1dfcf",
+    ];
+    const imageData = makeGridImageData(80, 64, (x, y) => {
+      const inSubject = x >= 30 && x < 50 && y >= 14 && y < 52;
+      if (!inSubject) {
+        return backgroundColors[(x * 5 + y * 7) % backgroundColors.length];
+      }
+
+      const feature =
+        (y >= 29 && y <= 31 && (x >= 35 && x <= 38 || x >= 43 && x <= 46)) ||
+        (y >= 42 && y <= 44 && x >= 37 && x <= 44);
+      if (feature) {
+        return x % 2 === 0 ? "#2b211d" : "#f1dfcf";
+      }
+
+      return subjectColors[Math.floor((y - 14) / 5) % subjectColors.length];
+    });
+
+    const analysis = analyzeAutopaletteImageData(imageData);
+    const subjectMatches = countNearPaletteColors(analysis.palette, subjectColors);
+    const backgroundMatches = countExactPaletteColors(analysis.palette, backgroundColors);
+
+    expectDistinctPalette(analysis.palette);
+    expect(analysis.focalPoint.x).toBeGreaterThan(0.32);
+    expect(analysis.focalPoint.x).toBeLessThan(0.68);
+    expect(subjectMatches).toBeGreaterThan(backgroundMatches);
+  });
 });

@@ -16,8 +16,8 @@ const FOCAL_GRID_SIZE = 12;
 const BACKGROUND_SAMPLE_WEIGHT = 0.08;
 const FOREGROUND_SAMPLE_WEIGHT = 7.5;
 const FOREGROUND_RADIUS = 0.24;
-const BACKGROUND_COLOR_LIMIT = 5;
-const BACKGROUND_FOCUS_THRESHOLD = 0.35;
+const BACKGROUND_COLOR_LIMIT = 4;
+const BACKGROUND_FOCUS_THRESHOLD = 0.5;
 
 interface LabColor {
   l: number;
@@ -82,6 +82,27 @@ function getSaturation(color: RgbColor): number {
   const min = Math.min(color.r, color.g, color.b);
 
   return max === 0 ? 0 : (max - min) / max;
+}
+
+function getSkinToneScore(color: RgbColor): number {
+  const max = Math.max(color.r, color.g, color.b);
+  const min = Math.min(color.r, color.g, color.b);
+  const cb = 128 - 0.168736 * color.r - 0.331264 * color.g + 0.5 * color.b;
+  const cr = 128 + 0.5 * color.r - 0.418688 * color.g - 0.081312 * color.b;
+  const channelSpread = max - min;
+  const hasSkinOrdering =
+    color.r > color.g * 0.95 &&
+    color.r > color.b * 1.08 &&
+    color.g > color.b * 0.85;
+  const hasSkinChroma = cb >= 72 && cb <= 132 && cr >= 128 && cr <= 178;
+  const hasUsableRange =
+    color.r > 45 &&
+    color.g > 30 &&
+    color.b > 18 &&
+    channelSpread > 14 &&
+    getLuminance(color) < 240;
+
+  return hasSkinOrdering && hasSkinChroma && hasUsableRange ? 1 : 0;
 }
 
 function srgbToLinear(value: number): number {
@@ -194,7 +215,8 @@ function detectFocalPoint(imageData: ImageData): AutopaletteFocalPoint {
     const centerDistance = Math.hypot(normalizedX - 0.5, normalizedY - 0.5);
     const centerBias = Math.max(0.35, 1 - centerDistance * 0.9);
     const saturation = getSaturation(color);
-    const saliency = (edge / 255 + saturation * 0.35) * centerBias;
+    const skinTone = getSkinToneScore(color);
+    const saliency = (edge / 255 + saturation * 0.35 + skinTone * 1.1) * centerBias;
     const gridX = Math.min(gridWidth - 1, Math.floor(normalizedX * gridWidth));
     const gridY = Math.min(gridHeight - 1, Math.floor(normalizedY * gridHeight));
     const cell = scores[gridY * gridWidth + gridX];
