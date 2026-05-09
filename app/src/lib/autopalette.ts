@@ -250,15 +250,10 @@ function getFocalWeight(
   imageData: ImageData,
   focalPoint: AutopaletteFocalPoint,
 ): number {
-  const normalizedX = imageData.width <= 1 ? 0.5 : x / (imageData.width - 1);
-  const normalizedY = imageData.height <= 1 ? 0.5 : y / (imageData.height - 1);
-  const distance = Math.hypot(
-    normalizedX - focalPoint.x,
-    normalizedY - focalPoint.y,
+  return (
+    BACKGROUND_SAMPLE_WEIGHT +
+    FOREGROUND_SAMPLE_WEIGHT * getFocalStrength(x, y, imageData, focalPoint)
   );
-  const foreground = Math.exp(-(distance ** 2) / (2 * FOREGROUND_RADIUS ** 2));
-
-  return BACKGROUND_SAMPLE_WEIGHT + FOREGROUND_SAMPLE_WEIGHT * foreground;
 }
 
 function getFocalStrength(

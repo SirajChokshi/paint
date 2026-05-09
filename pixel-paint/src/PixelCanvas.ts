@@ -170,11 +170,6 @@ export class PixelCanvas {
   }
 
   lineTo(x: number, y: number) {
-    if (this.cursor.x === null) {
-      this.moveTo(x, y);
-      return;
-    }
-
     const width = this.image.width;
     const height = this.image.height;
     let x1 = this.cursor.x;
