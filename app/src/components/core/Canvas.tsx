@@ -9,8 +9,10 @@ import {
   PAINT_APP_VIRTUAL_SCREEN_WIDTH,
   snapPointToGrid,
 } from "../../lib/virtualScreen";
-import { getPaintPalette } from "../../lib/palette";
-import { usePaintStore } from "../../stores/paintStore";
+import {
+  getActivePaintPalette,
+  usePaintStore,
+} from "../../stores/paintStore";
 import { canvasHistory } from "../../services/canvasHistory";
 
 const BRUSH_SIZE = 5;
@@ -82,7 +84,7 @@ export default function PixelCanvasRenderer() {
   const points = useRef<Point[]>([]);
   const drawingStartSnapshot = useRef<ImageData | null>(null);
   const linePreviewSnapshot = useRef<ImageData | null>(null);
-  const paletteId = usePaintStore((state) => state.paletteId);
+  const palette = usePaintStore(getActivePaintPalette);
   const selectedColor = usePaintStore((state) => state.selectedColor);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
@@ -117,7 +119,7 @@ export default function PixelCanvasRenderer() {
 
       const pixelArt = new PixelCanvas(ctx!, {
         pixelSize: PAINT_APP_CANVAS_PIXEL_SIZE,
-        palette: getPaintPalette(usePaintStore.getState().paletteId),
+        palette: getActivePaintPalette(usePaintStore.getState()),
       });
 
       pixelCanvasRef.current = pixelArt;
@@ -141,8 +143,8 @@ export default function PixelCanvasRenderer() {
   useEffect(() => {
     if (!pa) return;
 
-    pa.setPalette(getPaintPalette(paletteId), { remap: true });
-  }, [pa, paletteId]);
+    pa.setPalette(palette, { remap: true });
+  }, [pa, palette]);
 
   useEffect(() => {
     function cancelActiveDrawing(event: MouseEvent) {

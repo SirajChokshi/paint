@@ -1,7 +1,9 @@
 import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
-import { getPaintPalette } from "../../lib/palette";
-import { usePaintStore } from "../../stores/paintStore";
+import {
+  getActivePaintPalette,
+  usePaintStore,
+} from "../../stores/paintStore";
 
 export type DrawMode = "pencil" | "line" | "fill";
 type Tool = DrawMode | "erase";
@@ -256,6 +258,7 @@ export default function Tools() {
   const [tool, setTool] = useState<Tool>("pencil");
   const {
     paletteId,
+    customPalette,
     selectedColor,
     selectedColorIndex,
     setSelectedColor,
@@ -263,7 +266,7 @@ export default function Tools() {
     toolMode,
     setToolMode: setStoreToolMode,
   } = usePaintStore();
-  const palette = getPaintPalette(paletteId);
+  const palette = getActivePaintPalette({ paletteId, customPalette });
 
   useEffect(() => {
     setTool((currentTool) => {
