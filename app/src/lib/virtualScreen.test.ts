@@ -4,8 +4,8 @@ import {
   calculateDragPosition,
   calculateVirtualScreenLayout,
   calculateScaledDelta,
-  getPaintAppCanvasLogicalSize,
   getPaintAppCanvasPixelSize,
+  PAINT_APP_CANVAS_PIXEL_SIZE,
   PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
   PAINT_APP_VIRTUAL_SCREEN_WIDTH,
   snapPointToGrid,
@@ -22,7 +22,12 @@ describe("getPaintAppCanvasPixelSize", () => {
   });
 
   it("matches the pixel brush grid used by import", () => {
-    expect(getPaintAppCanvasLogicalSize()).toEqual({ width: 71, height: 47 });
+    const { width, height } = getPaintAppCanvasPixelSize();
+
+    expect({
+      width: Math.floor(width / PAINT_APP_CANVAS_PIXEL_SIZE),
+      height: Math.floor(height / PAINT_APP_CANVAS_PIXEL_SIZE),
+    }).toEqual({ width: 71, height: 47 });
   });
 });
 

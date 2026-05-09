@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { getStorageKey } from "./utils";
 
-const FILE_STORE_KEY = getStorageKey("files");
+const FILE_STORE_KEY = "sirajchokshi$paint@files";
 
 export interface SaveFile {
   name: string;
