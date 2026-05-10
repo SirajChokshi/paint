@@ -1,19 +1,8 @@
 import styled from "@emotion/styled";
-import { useEffect, useState } from "react";
 import {
   getActivePaintPalette,
   usePaintStore,
 } from "../../stores/paintStore";
-
-export type DrawMode = "pencil" | "line" | "fill";
-type Tool = DrawMode | "erase";
-
-const TOOL_TO_MODE: Record<Tool, DrawMode> = {
-  pencil: "pencil",
-  line: "line",
-  fill: "fill",
-  erase: "pencil",
-};
 
 const ToolGrid = styled.div`
   display: flex;
@@ -255,77 +244,47 @@ const ColorGrid = styled.div`
 `;
 
 export default function Tools() {
-  const [tool, setTool] = useState<Tool>("pencil");
   const {
     paletteId,
     customPalette,
     selectedColor,
     selectedColorIndex,
-    setSelectedColor,
     setSelectedColorIndex,
     toolMode,
     setToolMode: setStoreToolMode,
   } = usePaintStore();
   const palette = getActivePaintPalette({ paletteId, customPalette });
 
-  useEffect(() => {
-    setTool((currentTool) => {
-      if (currentTool === "erase") return currentTool;
-
-      return currentTool === toolMode ? currentTool : toolMode;
-    });
-  }, [toolMode]);
-
-  function setToolMode(t: Tool) {
-    setStoreToolMode(TOOL_TO_MODE[t]);
-    setTool(t);
-  }
-
-  function setColor(color: string) {
-    setSelectedColor(color);
-    if (!window.pixel) return;
-    window.pixel.color = color;
-  }
-
-  function selectTool(t: Tool) {
-    setToolMode(t);
-    if (t === "erase") {
-      setColor("#ffffff");
-    } else if (t === "pencil") {
-      setColor(selectedColor === "#ffffff" ? "#000000" : selectedColor);
-    }
-  }
-
   return (
     <ToolGrid>
       <ToolSection>
         <ToolButton
-          isActive={tool === "pencil"}
-          onClick={() => selectTool("pencil")}
+          isActive={toolMode === "pencil"}
+          onClick={() => setStoreToolMode("pencil")}
           title="Pencil"
         >
           <PencilIcon />
           <ToolLabel>Pencil</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={tool === "line"}
-          onClick={() => selectTool("line")}
+          isActive={toolMode === "line"}
+          onClick={() => setStoreToolMode("line")}
           title="Line"
         >
           <LineIcon />
           <ToolLabel>Line</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={tool === "fill"}
-          onClick={() => selectTool("fill")}
+          isActive={toolMode === "fill"}
+          onClick={() => setStoreToolMode("fill")}
           title="Fill"
         >
           <FillIcon />
           <ToolLabel>Fill</ToolLabel>
         </ToolButton>
         <ToolButton
-          isActive={tool === "erase"}
-          onClick={() => selectTool("erase")}
+          isActive={toolMode === "erase"}
+          onClick={() => setStoreToolMode("erase")}
           title="Eraser"
         >
           <EraseIcon />
@@ -343,16 +302,13 @@ export default function Tools() {
           <ColorSwatch
             key={color}
             swatchColor={color}
-            isSelected={selectedColorIndex === colorIndex && tool !== "erase"}
+            isSelected={selectedColorIndex === colorIndex && toolMode !== "erase"}
             aria-label={`Set drawing color to ${color}`}
             title={color}
             onClick={() => {
               setSelectedColorIndex(colorIndex);
-              if (window.pixel) {
-                window.pixel.color = color;
-              }
-              if (tool === "erase") {
-                setToolMode("pencil");
+              if (toolMode === "erase") {
+                setStoreToolMode("pencil");
               }
             }}
           />

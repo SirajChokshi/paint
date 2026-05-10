@@ -122,27 +122,16 @@ export class CanvasHistoryService {
   }
 
   import(data: string, options: PixelCanvasImportOptions = {}) {
-    const pixelCanvas = this.pixelCanvas;
-    if (!pixelCanvas) {
-      return Promise.resolve();
-    }
-
-    return this.runAsyncTransaction(async () => {
-      await this.callUntrackedImport(data, options);
-    });
+    return this.importCanvas(data, options);
   }
 
   replaceWithImport(data: string, options: PixelCanvasImportOptions = {}) {
-    const pixelCanvas = this.pixelCanvas;
     const plugin = this.plugin;
-    if (!pixelCanvas || !plugin) {
+    if (!plugin) {
       return this.import(data, options);
     }
 
-    return this.runAsyncTransaction(async () => {
-      plugin.clear();
-      await this.callUntrackedImport(data, options);
-    });
+    return this.importCanvas(data, options, () => plugin.clear());
   }
 
   importWithPalette(
@@ -173,6 +162,21 @@ export class CanvasHistoryService {
     return cloneImageData(
       pixelCanvas.renderer.getImageData(0, 0, canvas.width, canvas.height),
     );
+  }
+
+  private importCanvas(
+    data: string,
+    options: PixelCanvasImportOptions,
+    beforeImport?: () => void,
+  ) {
+    if (!this.pixelCanvas) {
+      return Promise.resolve();
+    }
+
+    return this.runAsyncTransaction(async () => {
+      beforeImport?.();
+      await this.callUntrackedImport(data, options);
+    });
   }
 
   private installPlugin(pixelCanvas: PixelCanvas) {

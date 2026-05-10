@@ -20,6 +20,10 @@ interface WindowStore {
   setWindowPosition: (id: string, position: Position) => void;
 }
 
+function moveWindowToTop(windows: WindowData[], window: WindowData) {
+  return [...windows.filter(({ id }) => id !== window.id), window];
+}
+
 export const useWindowStore = create<WindowStore>((set, get) => ({
   windows: [],
   addWindow: (window: WindowData) => {
@@ -39,7 +43,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     if (!window) return;
 
     set((state) => ({
-      windows: [...state.windows.filter((window) => window.id !== id), window],
+      windows: moveWindowToTop(state.windows, window),
     }));
   },
   getStackOrder: (id: string) => {
@@ -52,13 +56,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     if (!window) return;
 
     set((state) => ({
-      windows: [
-        ...state.windows.filter((window) => window.id !== id),
-        {
-          ...window,
-          position,
-        },
-      ],
+      windows: moveWindowToTop(state.windows, { ...window, position }),
     }));
   },
 }));

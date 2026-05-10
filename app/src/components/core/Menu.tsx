@@ -1,7 +1,19 @@
 import * as DropdownMenu from "@radix-ui/react-menubar";
-import { MenuItem, isSubMenu } from "../../types/ui";
-import { PropsWithChildren } from "react";
+import { type PropsWithChildren } from "react";
 import styled from "@emotion/styled";
+
+interface SubMenu {
+  name: string;
+  items: MenuItem[];
+}
+
+interface Action {
+  name: string;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+type MenuItem = SubMenu | Action;
 
 const MenuContentWrapper = styled.div`
   background-color: var(--mac-white, #ffffff);
@@ -66,7 +78,7 @@ export function Menu(props: MenuProps) {
         >
           <MenuContentWrapper>
             {props.actions.map((action) => {
-              if (isSubMenu(action)) {
+              if ("items" in action) {
                 return (
                   <Menu
                     key={action.name}

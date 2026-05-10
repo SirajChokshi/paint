@@ -8,6 +8,7 @@ import {
   PAINT_APP_VIRTUAL_SCREEN_HEIGHT,
   PAINT_APP_VIRTUAL_SCREEN_WIDTH,
   snapPointToGrid,
+  type Point,
 } from "../../lib/virtualScreen";
 import {
   getActivePaintPalette,
@@ -16,6 +17,7 @@ import {
 import { canvasHistory } from "../../services/canvasHistory";
 
 const BRUSH_SIZE = 5;
+const ERASER_COLOR = "#ffffff";
 
 const CanvasWrapper = styled.div`
   background: var(--mac-white);
@@ -57,26 +59,6 @@ const StyledCanvas = styled.canvas`
   position: relative;
 `;
 
-interface Point {
-  x: number;
-  y: number;
-}
-
-function getCanvasPoint(
-  canvas: HTMLCanvasElement,
-  clientX: number,
-  clientY: number
-): Point {
-  const rect = canvas.getBoundingClientRect();
-  return calculateCanvasPoint({
-    canvasWidth: canvas.width,
-    canvasHeight: canvas.height,
-    rect,
-    clientX,
-    clientY,
-  });
-}
-
 export default function PixelCanvasRenderer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixelCanvasRef = useRef<PixelCanvas | null>(null);
@@ -86,6 +68,7 @@ export default function PixelCanvasRenderer() {
   const linePreviewSnapshot = useRef<ImageData | null>(null);
   const palette = usePaintStore(getActivePaintPalette);
   const selectedColor = usePaintStore((state) => state.selectedColor);
+  const toolMode = usePaintStore((state) => state.toolMode);
 
   const [pa, setPa] = useState<PixelCanvas | null>(null);
   const [cursorPoint, setCursorPoint] = useState<Point | null>(null);
@@ -137,8 +120,8 @@ export default function PixelCanvasRenderer() {
   useEffect(() => {
     if (!pa) return;
 
-    pa.color = selectedColor;
-  }, [pa, selectedColor]);
+    pa.color = toolMode === "erase" ? ERASER_COLOR : selectedColor;
+  }, [pa, selectedColor, toolMode]);
 
   useEffect(() => {
     if (!pa) return;
@@ -210,6 +193,7 @@ export default function PixelCanvasRenderer() {
   function drawSegment(from: Point, to: Point) {
     if (!pa) return;
 
+    syncActiveColor();
     pa.beginPath();
     pa.moveTo(from.x, from.y);
     pa.lineTo(to.x, to.y);
@@ -220,11 +204,24 @@ export default function PixelCanvasRenderer() {
     return usePaintStore.getState().toolMode;
   }
 
+  function syncActiveColor() {
+    if (!pa) return;
+
+    const state = usePaintStore.getState();
+    pa.color = state.toolMode === "erase" ? ERASER_COLOR : state.selectedColor;
+  }
+
   function moveCursor(e: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
-    const point = getCanvasPoint(canvas, e.clientX, e.clientY);
+    const point = calculateCanvasPoint({
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      rect: canvas.getBoundingClientRect(),
+      clientX: e.clientX,
+      clientY: e.clientY,
+    });
     const snappedPoint = snapPointToGrid(point, BRUSH_SIZE);
     setCursorPoint(snappedPoint);
 
@@ -252,6 +249,7 @@ export default function PixelCanvasRenderer() {
             const tool = getActiveTool();
 
             if (tool === "fill") {
+              syncActiveColor();
               pa.fill(point.x, point.y);
               return;
             }
