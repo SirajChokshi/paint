@@ -1,5 +1,11 @@
 import styled from "@emotion/styled";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { PixelCanvas } from "pixel-paint";
 import {
   calculateCanvasPoint,
@@ -65,7 +71,6 @@ export default function PixelCanvasRenderer() {
   const isDrawing = useRef(false);
   const points = useRef<Point[]>([]);
   const drawingStartSnapshot = useRef<ImageData | null>(null);
-  const linePreviewSnapshot = useRef<ImageData | null>(null);
   const palette = usePaintStore(getActivePaintPalette);
   const selectedColor = usePaintStore((state) => state.selectedColor);
   const toolMode = usePaintStore((state) => state.toolMode);
@@ -80,6 +85,9 @@ export default function PixelCanvasRenderer() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const targetCanvas = canvas;
+    const targetContext = ctx;
+
     function mountPixelCanvas() {
       const screenWidth =
         window.virtualScreenWidth ?? PAINT_APP_VIRTUAL_SCREEN_WIDTH;
@@ -90,17 +98,17 @@ export default function PixelCanvasRenderer() {
         screenHeight,
       );
       if (
-        canvas!.width === width &&
-        canvas!.height === height &&
+        targetCanvas.width === width &&
+        targetCanvas.height === height &&
         pixelCanvasRef.current
       ) {
         return;
       }
 
-      canvas!.width = width;
-      canvas!.height = height;
+      targetCanvas.width = width;
+      targetCanvas.height = height;
 
-      const pixelArt = new PixelCanvas(ctx!, {
+      const pixelArt = new PixelCanvas(targetContext, {
         pixelSize: PAINT_APP_CANVAS_PIXEL_SIZE,
         palette: getActivePaintPalette(usePaintStore.getState()),
       });
@@ -130,6 +138,25 @@ export default function PixelCanvasRenderer() {
     pa.setPalette(palette, { remap: true });
   }, [pa, palette]);
 
+  const resetDrawingState = useCallback(() => {
+    isDrawing.current = false;
+    points.current.length = 0;
+    drawingStartSnapshot.current = null;
+  }, []);
+
+  const cancelDrawing = useCallback(() => {
+    const snapshot = drawingStartSnapshot.current;
+    const pixelCanvas = pixelCanvasRef.current;
+    if (snapshot && pixelCanvas) {
+      pixelCanvas.renderer.putImageData(snapshot, 0, 0);
+    }
+    if (isDrawing.current) {
+      canvasHistory.cancelTransaction();
+    }
+    setCursorPoint(null);
+    resetDrawingState();
+  }, [resetDrawingState]);
+
   useEffect(() => {
     function cancelActiveDrawing(event: MouseEvent) {
       if (!isDrawing.current) return;
@@ -147,39 +174,20 @@ export default function PixelCanvasRenderer() {
         capture: true,
       });
     };
-  }, []);
+  }, [cancelDrawing]);
 
   function stopDrawing() {
     if (isDrawing.current) {
       canvasHistory.commitTransaction();
     }
-    isDrawing.current = false;
-    points.current.length = 0;
-    drawingStartSnapshot.current = null;
-    linePreviewSnapshot.current = null;
-  }
-
-  function cancelDrawing() {
-    const snapshot = drawingStartSnapshot.current;
-    const pixelCanvas = pixelCanvasRef.current;
-    if (snapshot && pixelCanvas) {
-      pixelCanvas.renderer.putImageData(snapshot, 0, 0);
-    }
-    if (isDrawing.current) {
-      canvasHistory.cancelTransaction();
-    }
-    isDrawing.current = false;
-    setCursorPoint(null);
-    points.current.length = 0;
-    drawingStartSnapshot.current = null;
-    linePreviewSnapshot.current = null;
+    resetDrawingState();
   }
 
   function finishLine(point: Point) {
     if (!pa) return;
 
     const startPoint = points.current[0];
-    const snapshot = linePreviewSnapshot.current;
+    const snapshot = drawingStartSnapshot.current;
     if (!startPoint || !snapshot) {
       stopDrawing();
       return;
@@ -263,15 +271,6 @@ export default function PixelCanvasRenderer() {
               pa.renderer.canvas.width,
               pa.renderer.canvas.height
             );
-            linePreviewSnapshot.current =
-              tool === "line"
-                ? pa.renderer.getImageData(
-                    0,
-                    0,
-                    pa.renderer.canvas.width,
-                    pa.renderer.canvas.height
-                  )
-                : null;
             drawSegment(point, point);
           }}
           onPointerUp={(e) => {
@@ -313,7 +312,7 @@ export default function PixelCanvasRenderer() {
 
             if (tool === "line") {
               const startPoint = points.current[0];
-              const snapshot = linePreviewSnapshot.current;
+              const snapshot = drawingStartSnapshot.current;
               if (!startPoint || !snapshot) return;
 
               pa.renderer.putImageData(snapshot, 0, 0);
