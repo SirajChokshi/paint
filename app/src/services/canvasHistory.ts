@@ -49,7 +49,6 @@ export class CanvasHistoryService {
   private pixelCanvas: PixelCanvas | null = null;
   private plugin: CanvasMutationPlugin | null = null;
   private listeners = new Set<CanvasHistoryListener>();
-  private restoreImport: PixelCanvas["import"] | null = null;
   private unsubscribeHistory: (() => void) | null = null;
 
   getState(): HistoryStackState {
@@ -185,7 +184,6 @@ export class CanvasHistoryService {
     const importImage = pixelCanvas.import.bind(pixelCanvas);
     const setPalette = pixelCanvas.setPalette.bind(pixelCanvas);
 
-    this.restoreImport = importImage;
     this.plugin = {
       clear,
       fill,
@@ -213,11 +211,10 @@ export class CanvasHistoryService {
     this.pixelCanvas.import = this.plugin.import;
     this.pixelCanvas.setPalette = this.plugin.setPalette;
     this.plugin = null;
-    this.restoreImport = null;
   }
 
   private callUntrackedImport(data: string, options: PixelCanvasImportOptions) {
-    const importImage = this.restoreImport ?? this.plugin?.import;
+    const importImage = this.plugin?.import;
     if (!importImage) {
       return Promise.reject(new Error("Canvas import plugin is not installed"));
     }

@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useFileStore } from "../../stores/fileStore";
 import { FrameBus } from "../../lib/frame";
 import { Menu } from "./Menu";
-import { useWindowStore } from "../../stores/windowStore";
+import { type Position, useWindowStore } from "../../stores/windowStore";
 import { PAINT_APP_PALETTE_IDS, PAINT_APP_PALETTES } from "../../lib/palette";
 import { usePaintStore } from "../../stores/paintStore";
 import { canvasHistory } from "../../services/canvasHistory";
@@ -64,7 +64,10 @@ export default function Menubar() {
     window.alert(`Could not import image: ${getPixelImportErrorMessage(error)}`);
   }
 
-  function importImage(event: ChangeEvent<HTMLInputElement>) {
+  function importSelectedFile(
+    event: ChangeEvent<HTMLInputElement>,
+    importSource: (source: string) => Promise<void>,
+  ) {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
     if (!file) {
@@ -74,36 +77,31 @@ export default function Menubar() {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        void canvasHistory.import(reader.result).catch(reportInteractiveImportError);
+        void importSource(reader.result).catch(reportInteractiveImportError);
       }
     };
     reader.readAsDataURL(file);
   }
 
+  function importImage(event: ChangeEvent<HTMLInputElement>) {
+    importSelectedFile(event, (source) => canvasHistory.import(source));
+  }
+
   function importAutopalette(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0];
-    event.currentTarget.value = "";
-    if (!file) {
+    importSelectedFile(event, async (source) => {
+      const palette = await createAutopaletteFromImageSource(source);
+      await canvasHistory.importWithPalette(source, palette);
+      setCustomPalette(palette);
+    });
+  }
+
+  function toggleWindow(id: string, position: Position) {
+    if (getWindow(id)) {
+      removeWindow(id);
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") {
-        return;
-      }
-
-      const source = reader.result;
-      void createAutopaletteFromImageSource(source)
-        .then(async (palette) => {
-          await canvasHistory.importWithPalette(source, palette);
-          setCustomPalette(palette);
-        })
-        .catch((error) => {
-          reportInteractiveImportError(error);
-        });
-    };
-    reader.readAsDataURL(file);
+    addWindow({ id, position });
   }
 
   return (
@@ -242,27 +240,13 @@ export default function Menubar() {
           {
             name: getWindow(WINDOW_IDS.tools) ? "✓ Tools" : "  Tools",
             onClick: () => {
-              if (getWindow(WINDOW_IDS.tools)) {
-                removeWindow(WINDOW_IDS.tools);
-              } else {
-                addWindow({
-                  id: WINDOW_IDS.tools,
-                  position: { x: 15, y: 15 },
-                });
-              }
+              toggleWindow(WINDOW_IDS.tools, { x: 15, y: 15 });
             },
           },
           {
             name: getWindow(WINDOW_IDS.canvas) ? "✓ Canvas" : "  Canvas",
             onClick: () => {
-              if (getWindow(WINDOW_IDS.canvas)) {
-                removeWindow(WINDOW_IDS.canvas);
-              } else {
-                addWindow({
-                  id: WINDOW_IDS.canvas,
-                  position: { x: 180, y: 15 },
-                });
-              }
+              toggleWindow(WINDOW_IDS.canvas, { x: 180, y: 15 });
             },
           },
         ]}

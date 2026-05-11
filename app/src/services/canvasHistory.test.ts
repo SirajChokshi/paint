@@ -155,15 +155,8 @@ describe("CanvasHistoryService", () => {
     (
       history as unknown as {
         plugin: null;
-        restoreImport: null;
       }
     ).plugin = null;
-    (
-      history as unknown as {
-        plugin: null;
-        restoreImport: null;
-      }
-    ).restoreImport = null;
 
     await expect(history.import("2")).rejects.toThrow(
       "Canvas import plugin is not installed",
