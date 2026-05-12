@@ -2,6 +2,12 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { PixelCanvas, type Palette } from "pixel-paint";
 import { HistoryStackState } from "./historyStack";
 import { CanvasHistoryService } from "./canvasHistory";
+import { usePaintStore } from "../stores/paintStore";
+import {
+  DEFAULT_PAINT_PALETTE_ID,
+  PAINT_APP_PALETTE,
+  PAINT_APP_PALETTES,
+} from "../lib/palette";
 
 class TestImageData {
   data: Uint8ClampedArray;
@@ -110,6 +116,49 @@ function createPixelCanvasWithFailingImport(
   return { pixelCanvas, renderer };
 }
 
+function createPixelCanvasWithPaletteImport(
+  initialValue: number,
+  initialPalette: Palette,
+) {
+  const renderer = new TestCanvasRenderer(initialValue);
+  let currentPalette = initialPalette;
+  let importPalette: Palette | null = null;
+  const pixelCanvas = {
+    renderer,
+    get palette() {
+      return currentPalette;
+    },
+    clear: () => renderer.setValue(0),
+    fill: () => renderer.setValue(1),
+    setPalette(palette: Palette) {
+      currentPalette = palette;
+    },
+    import: async (data: string) => {
+      await Promise.resolve();
+      importPalette = currentPalette;
+      renderer.setValue(Number(data));
+    },
+  } as unknown as PixelCanvas;
+
+  return {
+    pixelCanvas,
+    renderer,
+    get importPalette() {
+      return importPalette;
+    },
+  };
+}
+
+function resetPaintStore() {
+  usePaintStore.setState({
+    selectedColor: PAINT_APP_PALETTE[0],
+    selectedColorIndex: 0,
+    paletteId: DEFAULT_PAINT_PALETTE_ID,
+    customPalette: null,
+    toolMode: "pencil",
+  });
+}
+
 beforeAll(() => {
   globalThis.ImageData = TestImageData as typeof ImageData;
 });
@@ -187,5 +236,76 @@ describe("CanvasHistoryService", () => {
     await expect(history.importWithPalette("data", ["#ffffff"])).rejects.toThrow(
       "Canvas import plugin is not installed",
     );
+  });
+
+  it("resets an active custom image palette to toybox for the next plain import", async () => {
+    resetPaintStore();
+    const history = new CanvasHistoryService();
+    const customPalette = [
+      "#101010",
+      "#202020",
+      "#303030",
+      "#404040",
+      "#505050",
+      "#606060",
+      "#707070",
+      "#808080",
+      "#909090",
+      "#a0a0a0",
+      "#b0b0b0",
+      "#c0c0c0",
+      "#d0d0d0",
+      "#e0e0e0",
+      "#f0f0f0",
+      "#ffffff",
+    ];
+    const imported = createPixelCanvasWithPaletteImport(
+      4,
+      customPalette,
+    );
+    usePaintStore.setState({
+      customPalette,
+      selectedColorIndex: 1,
+      selectedColor: customPalette[1],
+    });
+
+    history.bind(imported.pixelCanvas);
+    await history.import("8");
+
+    expect(imported.importPalette).toBe(PAINT_APP_PALETTE);
+    expect(imported.pixelCanvas.palette).toBe(PAINT_APP_PALETTE);
+    expect(usePaintStore.getState()).toMatchObject({
+      paletteId: DEFAULT_PAINT_PALETTE_ID,
+      customPalette: null,
+      selectedColor: PAINT_APP_PALETTE[1],
+      selectedColorIndex: 1,
+    });
+  });
+
+  it("keeps a named palette selected for a plain import", async () => {
+    resetPaintStore();
+    const history = new CanvasHistoryService();
+    const namedPalette = PAINT_APP_PALETTES.watercolor.colors;
+    const imported = createPixelCanvasWithPaletteImport(
+      4,
+      namedPalette,
+    );
+    usePaintStore.setState({
+      paletteId: "watercolor",
+      customPalette: null,
+      selectedColorIndex: 2,
+      selectedColor: namedPalette[2],
+    });
+
+    history.bind(imported.pixelCanvas);
+    await history.import("8");
+
+    expect(imported.importPalette).toBe(namedPalette);
+    expect(usePaintStore.getState()).toMatchObject({
+      paletteId: "watercolor",
+      customPalette: null,
+      selectedColor: namedPalette[2],
+      selectedColorIndex: 2,
+    });
   });
 });
