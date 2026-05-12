@@ -4,10 +4,17 @@ import {
   type PixelCanvasImportOptions,
 } from "pixel-paint";
 import { HistoryStackService, HistoryStackState } from "./historyStack";
+import { usePaintStore, type PaintStore } from "../stores/paintStore";
+import {
+  DEFAULT_PAINT_PALETTE_ID,
+  PAINT_APP_PALETTE,
+  getPaintPaletteColor,
+} from "../lib/palette";
 
 export type CanvasSnapshot = ImageData;
 
 type CanvasHistoryListener = (state: HistoryStackState) => void;
+type PaletteRestore = () => void;
 
 interface CanvasMutationPlugin {
   clear: PixelCanvas["clear"];
@@ -15,6 +22,11 @@ interface CanvasMutationPlugin {
   import: PixelCanvas["import"];
   setPalette: PixelCanvas["setPalette"];
 }
+
+type PaintPaletteState = Pick<
+  PaintStore,
+  "customPalette" | "paletteId" | "selectedColor" | "selectedColorIndex"
+>;
 
 function cloneImageData(snapshot: ImageData) {
   return new ImageData(
@@ -173,9 +185,47 @@ export class CanvasHistoryService {
     }
 
     return this.runAsyncTransaction(async () => {
-      beforeImport?.();
-      await this.callUntrackedImport(data, options);
+      const restorePalette = this.preparePlainImportPalette();
+      try {
+        beforeImport?.();
+        await this.callUntrackedImport(data, options);
+      } catch (error) {
+        restorePalette?.();
+        throw error;
+      }
     });
+  }
+
+  private preparePlainImportPalette(): PaletteRestore | null {
+    const plugin = this.plugin;
+    const pixelCanvas = this.pixelCanvas;
+    const paintState = usePaintStore.getState();
+    if (!plugin || !pixelCanvas || !paintState.customPalette) {
+      return null;
+    }
+
+    const previousCanvasPalette = pixelCanvas.palette;
+    const previousPaintState: PaintPaletteState = {
+      customPalette: paintState.customPalette,
+      paletteId: paintState.paletteId,
+      selectedColor: paintState.selectedColor,
+      selectedColorIndex: paintState.selectedColorIndex,
+    };
+
+    usePaintStore.setState({
+      paletteId: DEFAULT_PAINT_PALETTE_ID,
+      customPalette: null,
+      selectedColor: getPaintPaletteColor(
+        DEFAULT_PAINT_PALETTE_ID,
+        paintState.selectedColorIndex,
+      ),
+    });
+    plugin.setPalette(PAINT_APP_PALETTE, { remap: false });
+
+    return () => {
+      usePaintStore.setState(previousPaintState);
+      plugin.setPalette(previousCanvasPalette, { remap: false });
+    };
   }
 
   private installPlugin(pixelCanvas: PixelCanvas) {
