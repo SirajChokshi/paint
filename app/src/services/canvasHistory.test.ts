@@ -9,6 +9,25 @@ import {
   PAINT_APP_PALETTES,
 } from "../lib/palette";
 
+const CUSTOM_IMAGE_PALETTE = [
+  "#101010",
+  "#202020",
+  "#303030",
+  "#404040",
+  "#505050",
+  "#606060",
+  "#707070",
+  "#808080",
+  "#909090",
+  "#a0a0a0",
+  "#b0b0b0",
+  "#c0c0c0",
+  "#d0d0d0",
+  "#e0e0e0",
+  "#f0f0f0",
+  "#ffffff",
+];
+
 class TestImageData {
   data: Uint8ClampedArray;
   width: number;
@@ -97,6 +116,7 @@ function createPixelCanvasWithFailingImport(
 ) {
   const renderer = new TestCanvasRenderer(initialValue);
   let currentPalette = initialPalette;
+  let importPalette: Palette | null = null;
   const pixelCanvas = {
     renderer,
     get palette() {
@@ -108,12 +128,19 @@ function createPixelCanvasWithFailingImport(
       currentPalette = palette;
     },
     import: async () => {
+      importPalette = currentPalette;
       renderer.setValue(9);
       throw new Error("import failed");
     },
   } as unknown as PixelCanvas;
 
-  return { pixelCanvas, renderer };
+  return {
+    pixelCanvas,
+    renderer,
+    get importPalette() {
+      return importPalette;
+    },
+  };
 }
 
 function createPixelCanvasWithPaletteImport(
@@ -241,32 +268,14 @@ describe("CanvasHistoryService", () => {
   it("resets an active custom image palette to toybox for the next plain import", async () => {
     resetPaintStore();
     const history = new CanvasHistoryService();
-    const customPalette = [
-      "#101010",
-      "#202020",
-      "#303030",
-      "#404040",
-      "#505050",
-      "#606060",
-      "#707070",
-      "#808080",
-      "#909090",
-      "#a0a0a0",
-      "#b0b0b0",
-      "#c0c0c0",
-      "#d0d0d0",
-      "#e0e0e0",
-      "#f0f0f0",
-      "#ffffff",
-    ];
     const imported = createPixelCanvasWithPaletteImport(
       4,
-      customPalette,
+      CUSTOM_IMAGE_PALETTE,
     );
     usePaintStore.setState({
-      customPalette,
+      customPalette: CUSTOM_IMAGE_PALETTE,
       selectedColorIndex: 1,
-      selectedColor: customPalette[1],
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
     });
 
     history.bind(imported.pixelCanvas);
@@ -278,6 +287,33 @@ describe("CanvasHistoryService", () => {
       paletteId: DEFAULT_PAINT_PALETTE_ID,
       customPalette: null,
       selectedColor: PAINT_APP_PALETTE[1],
+      selectedColorIndex: 1,
+    });
+  });
+
+  it("restores an active custom image palette when a plain import fails", async () => {
+    resetPaintStore();
+    const history = new CanvasHistoryService();
+    const imported = createPixelCanvasWithFailingImport(
+      5,
+      CUSTOM_IMAGE_PALETTE,
+    );
+    usePaintStore.setState({
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColorIndex: 1,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+    });
+
+    history.bind(imported.pixelCanvas);
+
+    await expect(history.import("data")).rejects.toThrow("import failed");
+    expect(imported.importPalette).toBe(PAINT_APP_PALETTE);
+    expect(imported.pixelCanvas.palette).toBe(CUSTOM_IMAGE_PALETTE);
+    expect(imported.renderer.value).toBe(5);
+    expect(usePaintStore.getState()).toMatchObject({
+      paletteId: DEFAULT_PAINT_PALETTE_ID,
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
       selectedColorIndex: 1,
     });
   });
