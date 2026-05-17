@@ -131,7 +131,15 @@ export const usePaintStore = create<PaintStore>()(
             };
           }
 
-          return { foregroundColorIndex: clampedIndex };
+          return {
+            foregroundColorIndex: clampedIndex,
+            activeColorSlot: "fg",
+          };
+        }),
+      setToolMode: (toolMode) =>
+        set({
+          toolMode,
+          activeColorSlot: toolMode === "erase" ? "bg" : "fg",
         }),
       setPaletteId: (paletteId) =>
         set((state) => ({
@@ -150,7 +158,6 @@ export const usePaintStore = create<PaintStore>()(
             customPalette.length - 1,
           ),
         })),
-      setToolMode: (toolMode) => set({ toolMode }),
     }),
     {
       name: PAINT_STORE_KEY,

@@ -350,22 +350,17 @@ export default function Tools() {
             key={color}
             swatchColor={color}
             isSelected={
-              activeColorSlot === "fg"
-                ? foregroundColorIndex === colorIndex && toolMode !== "erase"
-                : backgroundColor === color
+              activeColorSlot === "bg"
+                ? backgroundColor === color
+                : foregroundColorIndex === colorIndex
             }
             aria-label={
-              activeColorSlot === "fg"
-                ? `Set foreground color to ${color}`
-                : `Set background color to ${color}`
+              activeColorSlot === "bg"
+                ? `Set background color to ${color}`
+                : `Set foreground color to ${color}`
             }
             title={color}
-            onClick={() => {
-              setPaletteColorIndex(colorIndex);
-              if (activeColorSlot === "fg" && toolMode === "erase") {
-                setStoreToolMode("pencil");
-              }
-            }}
+            onClick={() => setPaletteColorIndex(colorIndex)}
           />
         ))}
       </ColorGrid>
