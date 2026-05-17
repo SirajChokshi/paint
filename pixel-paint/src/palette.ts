@@ -131,16 +131,22 @@ export function quantizeImageDataToPalette(
   const data = imageData.data;
   for (let index = 0; index < data.length; index += 4) {
     const alpha = data[index + 3];
-    const color = alpha === 0
-      ? "#ffffff"
-      : getClosestPaletteColor(
-          {
-            r: data[index],
-            g: data[index + 1],
-            b: data[index + 2],
-          },
-          palette,
-        );
+    if (alpha === 0) {
+      data[index] = 0;
+      data[index + 1] = 0;
+      data[index + 2] = 0;
+      data[index + 3] = 0;
+      continue;
+    }
+
+    const color = getClosestPaletteColor(
+      {
+        r: data[index],
+        g: data[index + 1],
+        b: data[index + 2],
+      },
+      palette,
+    );
     const rgb = rgbFromHex(color);
 
     data[index] = rgb.r;
