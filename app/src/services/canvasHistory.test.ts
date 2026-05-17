@@ -178,8 +178,9 @@ function createPixelCanvasWithPaletteImport(
 
 function resetPaintStore() {
   usePaintStore.setState({
-    selectedColor: PAINT_APP_PALETTE[0],
-    selectedColorIndex: 0,
+    foregroundColorIndex: 0,
+    backgroundColor: "transparent",
+    activeColorSlot: "fg",
     paletteId: DEFAULT_PAINT_PALETTE_ID,
     customPalette: null,
     toolMode: "pencil",
@@ -274,8 +275,7 @@ describe("CanvasHistoryService", () => {
     );
     usePaintStore.setState({
       customPalette: CUSTOM_IMAGE_PALETTE,
-      selectedColorIndex: 1,
-      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+      foregroundColorIndex: 1,
     });
 
     history.bind(imported.pixelCanvas);
@@ -286,8 +286,7 @@ describe("CanvasHistoryService", () => {
     expect(usePaintStore.getState()).toMatchObject({
       paletteId: DEFAULT_PAINT_PALETTE_ID,
       customPalette: null,
-      selectedColor: PAINT_APP_PALETTE[1],
-      selectedColorIndex: 1,
+      foregroundColorIndex: 1,
     });
   });
 
@@ -300,8 +299,7 @@ describe("CanvasHistoryService", () => {
     );
     usePaintStore.setState({
       customPalette: CUSTOM_IMAGE_PALETTE,
-      selectedColorIndex: 1,
-      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+      foregroundColorIndex: 1,
     });
 
     history.bind(imported.pixelCanvas);
@@ -313,8 +311,7 @@ describe("CanvasHistoryService", () => {
     expect(usePaintStore.getState()).toMatchObject({
       paletteId: DEFAULT_PAINT_PALETTE_ID,
       customPalette: CUSTOM_IMAGE_PALETTE,
-      selectedColor: CUSTOM_IMAGE_PALETTE[1],
-      selectedColorIndex: 1,
+      foregroundColorIndex: 1,
     });
   });
 
@@ -329,8 +326,7 @@ describe("CanvasHistoryService", () => {
     usePaintStore.setState({
       paletteId: "watercolor",
       customPalette: null,
-      selectedColorIndex: 2,
-      selectedColor: namedPalette[2],
+      foregroundColorIndex: 2,
     });
 
     history.bind(imported.pixelCanvas);
@@ -340,8 +336,7 @@ describe("CanvasHistoryService", () => {
     expect(usePaintStore.getState()).toMatchObject({
       paletteId: "watercolor",
       customPalette: null,
-      selectedColor: namedPalette[2],
-      selectedColorIndex: 2,
+      foregroundColorIndex: 2,
     });
   });
 });

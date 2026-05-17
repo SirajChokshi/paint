@@ -1,3 +1,4 @@
+import { isTransparentColor } from "./color";
 import {
   getClosestPaletteColor,
   normalizeHexColor,
@@ -136,7 +137,66 @@ export class PixelCanvas {
   beginPath() {
     this.data.fill(0);
   }
+
+  private clearsPixels() {
+    return isTransparentColor(this.color);
+  }
+
+  private applyClearMask() {
+    const renderer = this.renderer;
+    const width = renderer.canvas.width;
+    const height = renderer.canvas.height;
+    if (width <= 0 || height <= 0) {
+      this.data.fill(0);
+      return;
+    }
+
+    const image = renderer.getImageData(0, 0, width, height);
+    const data = image.data;
+    const logicalWidth = this.image.width;
+    const logicalHeight = this.image.height;
+    const pixelSize = this.pixelSize;
+
+    for (let logicalY = 0; logicalY < logicalHeight; logicalY += 1) {
+      for (let logicalX = 0; logicalX < logicalWidth; logicalX += 1) {
+        const maskIndex = logicalY * logicalWidth + logicalX;
+        if (this.data[maskIndex] === 0) {
+          continue;
+        }
+
+        const startX = logicalX * pixelSize;
+        const startY = logicalY * pixelSize;
+        for (let offsetY = 0; offsetY < pixelSize; offsetY += 1) {
+          for (let offsetX = 0; offsetX < pixelSize; offsetX += 1) {
+            const rendererX = startX + offsetX;
+            const rendererY = startY + offsetY;
+            if (
+              rendererX >= width ||
+              rendererY >= height
+            ) {
+              continue;
+            }
+
+            const pixelIndex = (rendererY * width + rendererX) * 4;
+            data[pixelIndex] = 0;
+            data[pixelIndex + 1] = 0;
+            data[pixelIndex + 2] = 0;
+            data[pixelIndex + 3] = 0;
+          }
+        }
+      }
+    }
+
+    renderer.putImageData(image, 0, 0);
+    this.data.fill(0);
+  }
+
   stroke() {
+    if (this.clearsPixels()) {
+      this.applyClearMask();
+      return;
+    }
+
     const renderer = this.renderer;
     const currentSmoothing = renderer.imageSmoothingEnabled;
     const ctx = this.ctx;
@@ -166,6 +226,11 @@ export class PixelCanvas {
     }
 
     const idx = (y * this.image.width + x) | 0;
+    if (this.clearsPixels()) {
+      this.data[idx] = 0xffffffff;
+      return;
+    }
+
     this.data[idx] = 0xff000000 | parseInt(this.color.slice(1), 16);
   }
 
@@ -225,6 +290,50 @@ export class PixelCanvas {
     const targetB = data[startIdx + 2];
     const targetA = data[startIdx + 3];
 
+    if (this.clearsPixels()) {
+      if (targetA === 0) {
+        return;
+      }
+
+      const visited = new Uint8Array(width * height);
+      const queue: { x: number; y: number }[] = [{ x, y }];
+
+      while (queue.length) {
+        const point = queue.pop();
+        if (!point) break;
+
+        const { x, y } = point;
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+
+        const pixelIdx = y * width + x;
+        if (visited[pixelIdx] === 1) continue;
+        visited[pixelIdx] = 1;
+
+        const idx = pixelIdx * 4;
+        if (
+          data[idx] !== targetR ||
+          data[idx + 1] !== targetG ||
+          data[idx + 2] !== targetB ||
+          data[idx + 3] !== targetA
+        ) {
+          continue;
+        }
+
+        data[idx] = 0;
+        data[idx + 1] = 0;
+        data[idx + 2] = 0;
+        data[idx + 3] = 0;
+
+        queue.push({ x: x - 1, y });
+        queue.push({ x: x + 1, y });
+        queue.push({ x, y: y - 1 });
+        queue.push({ x, y: y + 1 });
+      }
+
+      this.renderer.putImageData(image, 0, 0);
+      return;
+    }
+
     const fillColor = rgbFromHex(this.color);
     if (
       targetR === fillColor.r &&
@@ -274,17 +383,14 @@ export class PixelCanvas {
   }
 
   clear() {
-    const currentFillStyle = this.renderer.fillStyle;
+    const width = this.renderer.canvas.width;
+    const height = this.renderer.canvas.height;
+    if (width <= 0 || height <= 0) {
+      return;
+    }
 
-    this.renderer.fillStyle = "#ffffff";
-    this.renderer.fillRect(
-      0,
-      0,
-      this.renderer.canvas.width,
-      this.renderer.canvas.height
-    );
-
-    this.renderer.fillStyle = currentFillStyle;
+    const image = this.renderer.createImageData(width, height);
+    this.renderer.putImageData(image, 0, 0);
   }
 
   export() {

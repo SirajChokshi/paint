@@ -5,11 +5,7 @@ import {
 } from "pixel-paint";
 import { HistoryStackService, HistoryStackState } from "./historyStack";
 import { usePaintStore, type PaintStore } from "../stores/paintStore";
-import {
-  DEFAULT_PAINT_PALETTE_ID,
-  PAINT_APP_PALETTE,
-  getPaintPaletteColor,
-} from "../lib/palette";
+import { DEFAULT_PAINT_PALETTE_ID, PAINT_APP_PALETTE } from "../lib/palette";
 
 export type CanvasSnapshot = ImageData;
 
@@ -25,7 +21,10 @@ interface CanvasMutationPlugin {
 
 type PaintPaletteState = Pick<
   PaintStore,
-  "customPalette" | "paletteId" | "selectedColor" | "selectedColorIndex"
+  | "customPalette"
+  | "paletteId"
+  | "foregroundColorIndex"
+  | "backgroundColor"
 >;
 
 function cloneImageData(snapshot: ImageData) {
@@ -208,17 +207,14 @@ export class CanvasHistoryService {
     const previousPaintState: PaintPaletteState = {
       customPalette: paintState.customPalette,
       paletteId: paintState.paletteId,
-      selectedColor: paintState.selectedColor,
-      selectedColorIndex: paintState.selectedColorIndex,
+      foregroundColorIndex: paintState.foregroundColorIndex,
+      backgroundColor: paintState.backgroundColor,
     };
 
     usePaintStore.setState({
       paletteId: DEFAULT_PAINT_PALETTE_ID,
       customPalette: null,
-      selectedColor: getPaintPaletteColor(
-        DEFAULT_PAINT_PALETTE_ID,
-        paintState.selectedColorIndex,
-      ),
+      foregroundColorIndex: paintState.foregroundColorIndex,
     });
     plugin.setPalette(PAINT_APP_PALETTE, { remap: false });
 
