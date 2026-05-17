@@ -34,6 +34,13 @@ export interface PixelCanvasSetPaletteOptions {
   remap?: boolean;
 }
 
+interface RgbaColor {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
+
 export class PixelCanvas {
   cursor: {
     x: number;
@@ -274,76 +281,15 @@ export class PixelCanvas {
     this.cursor.y = y2;
   }
 
-  fill(x1: number, y1: number) {
-    const width = this.renderer.canvas.width;
-    const height = this.renderer.canvas.height;
-    if (width <= 0 || height <= 0) return;
-
-    const x = Math.max(0, Math.min(width - 1, x1 | 0));
-    const y = Math.max(0, Math.min(height - 1, y1 | 0));
-
-    const image = this.renderer.getImageData(0, 0, width, height);
-    const data = image.data;
-    const startIdx = (y * width + x) * 4;
-    const targetR = data[startIdx];
-    const targetG = data[startIdx + 1];
-    const targetB = data[startIdx + 2];
-    const targetA = data[startIdx + 3];
-
-    if (this.clearsPixels()) {
-      if (targetA === 0) {
-        return;
-      }
-
-      const visited = new Uint8Array(width * height);
-      const queue: { x: number; y: number }[] = [{ x, y }];
-
-      while (queue.length) {
-        const point = queue.pop();
-        if (!point) break;
-
-        const { x, y } = point;
-        if (x < 0 || x >= width || y < 0 || y >= height) continue;
-
-        const pixelIdx = y * width + x;
-        if (visited[pixelIdx] === 1) continue;
-        visited[pixelIdx] = 1;
-
-        const idx = pixelIdx * 4;
-        if (
-          data[idx] !== targetR ||
-          data[idx + 1] !== targetG ||
-          data[idx + 2] !== targetB ||
-          data[idx + 3] !== targetA
-        ) {
-          continue;
-        }
-
-        data[idx] = 0;
-        data[idx + 1] = 0;
-        data[idx + 2] = 0;
-        data[idx + 3] = 0;
-
-        queue.push({ x: x - 1, y });
-        queue.push({ x: x + 1, y });
-        queue.push({ x, y: y - 1 });
-        queue.push({ x, y: y + 1 });
-      }
-
-      this.renderer.putImageData(image, 0, 0);
-      return;
-    }
-
-    const fillColor = rgbFromHex(this.color);
-    if (
-      targetR === fillColor.r &&
-      targetG === fillColor.g &&
-      targetB === fillColor.b &&
-      targetA === 255
-    ) {
-      return;
-    }
-
+  private floodFill(
+    data: Uint8ClampedArray,
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+    targetColor: RgbaColor,
+    fillColor: RgbaColor
+  ) {
     const visited = new Uint8Array(width * height);
     const queue: { x: number; y: number }[] = [{ x, y }];
 
@@ -360,10 +306,10 @@ export class PixelCanvas {
 
       const idx = pixelIdx * 4;
       if (
-        data[idx] !== targetR ||
-        data[idx + 1] !== targetG ||
-        data[idx + 2] !== targetB ||
-        data[idx + 3] !== targetA
+        data[idx] !== targetColor.r ||
+        data[idx + 1] !== targetColor.g ||
+        data[idx + 2] !== targetColor.b ||
+        data[idx + 3] !== targetColor.a
       ) {
         continue;
       }
@@ -371,14 +317,68 @@ export class PixelCanvas {
       data[idx] = fillColor.r;
       data[idx + 1] = fillColor.g;
       data[idx + 2] = fillColor.b;
-      data[idx + 3] = 255;
+      data[idx + 3] = fillColor.a;
 
       queue.push({ x: x - 1, y });
       queue.push({ x: x + 1, y });
       queue.push({ x, y: y - 1 });
       queue.push({ x, y: y + 1 });
     }
+  }
 
+  fill(x1: number, y1: number) {
+    const width = this.renderer.canvas.width;
+    const height = this.renderer.canvas.height;
+    if (width <= 0 || height <= 0) return;
+
+    const x = Math.max(0, Math.min(width - 1, x1 | 0));
+    const y = Math.max(0, Math.min(height - 1, y1 | 0));
+
+    const image = this.renderer.getImageData(0, 0, width, height);
+    const data = image.data;
+    const startIdx = (y * width + x) * 4;
+    const targetR = data[startIdx];
+    const targetG = data[startIdx + 1];
+    const targetB = data[startIdx + 2];
+    const targetA = data[startIdx + 3];
+    const targetColor = {
+      r: targetR,
+      g: targetG,
+      b: targetB,
+      a: targetA,
+    };
+
+    if (this.clearsPixels()) {
+      if (targetA === 0) {
+        return;
+      }
+
+      this.floodFill(data, width, height, x, y, targetColor, {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 0,
+      });
+      this.renderer.putImageData(image, 0, 0);
+      return;
+    }
+
+    const fillColor = rgbFromHex(this.color);
+    if (
+      targetR === fillColor.r &&
+      targetG === fillColor.g &&
+      targetB === fillColor.b &&
+      targetA === 255
+    ) {
+      return;
+    }
+
+    this.floodFill(data, width, height, x, y, targetColor, {
+      r: fillColor.r,
+      g: fillColor.g,
+      b: fillColor.b,
+      a: 255,
+    });
     this.renderer.putImageData(image, 0, 0);
   }
 

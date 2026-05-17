@@ -4,7 +4,6 @@ import type { Palette } from "pixel-paint";
 import { TRANSPARENT_COLOR } from "pixel-paint";
 import {
   DEFAULT_PAINT_PALETTE_ID,
-  getPaintPaletteColorIndex,
   getPaintPalette,
   type PaintPaletteId,
 } from "../lib/palette";
@@ -25,8 +24,6 @@ export interface PaintStore {
   paletteId: PaintPaletteId;
   customPalette: Palette | null;
   toolMode: PaintTool;
-  setForegroundColorIndex: (colorIndex: number) => void;
-  setBackgroundColor: (color: BackgroundColor) => void;
   setBackgroundTransparent: () => void;
   setActiveColorSlot: (slot: ActiveColorSlot) => void;
   setPaletteColorIndex: (colorIndex: number) => void;
@@ -92,28 +89,6 @@ export const usePaintStore = create<PaintStore>()(
       paletteId: DEFAULT_PAINT_PALETTE_ID,
       customPalette: null,
       toolMode: "pencil",
-      setForegroundColorIndex: (foregroundColorIndex) =>
-        set((state) => {
-          const palette = getActivePaintPalette(state);
-          const clampedIndex = Math.max(
-            0,
-            Math.min(foregroundColorIndex, palette.length - 1),
-          );
-
-          return { foregroundColorIndex: clampedIndex };
-        }),
-      setBackgroundColor: (backgroundColor) =>
-        set((state) => {
-          if (backgroundColor === TRANSPARENT_COLOR) {
-            return { backgroundColor: TRANSPARENT_COLOR };
-          }
-
-          const palette = getActivePaintPalette(state);
-          const normalized = getPaintPaletteColorIndex(backgroundColor, palette);
-          return {
-            backgroundColor: palette[normalized] ?? palette[0] ?? "#ffffff",
-          };
-        }),
       setBackgroundTransparent: () =>
         set({ backgroundColor: TRANSPARENT_COLOR }),
       setActiveColorSlot: (activeColorSlot) => set({ activeColorSlot }),
