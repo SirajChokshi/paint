@@ -3,7 +3,11 @@ import {
   type Palette,
   type PixelCanvasImportOptions,
 } from "pixel-paint";
-import { HistoryStackService, HistoryStackState } from "./historyStack";
+import {
+  HistoryStackService,
+  HistoryStackState,
+  type HistorySideEffect,
+} from "./historyStack";
 import { usePaintStore, type PaintStore } from "../stores/paintStore";
 import {
   DEFAULT_PAINT_PALETTE_ID,
@@ -14,12 +18,6 @@ import {
 export type CanvasSnapshot = ImageData;
 
 type CanvasHistoryListener = (state: HistoryStackState) => void;
-type PaletteRestore = () => void;
-
-interface PaletteHistoryEntry {
-  undo: PaletteRestore;
-  redo: PaletteRestore;
-}
 
 interface CanvasMutationPlugin {
   clear: PixelCanvas["clear"];
@@ -67,9 +65,6 @@ export class CanvasHistoryService {
   private plugin: CanvasMutationPlugin | null = null;
   private listeners = new Set<CanvasHistoryListener>();
   private unsubscribeHistory: (() => void) | null = null;
-  private paletteUndoStack: PaletteHistoryEntry[] = [];
-  private paletteRedoStack: PaletteHistoryEntry[] = [];
-
   getState(): HistoryStackState {
     return this.history?.getState() ?? { canUndo: false, canRedo: false };
   }
@@ -99,38 +94,14 @@ export class CanvasHistoryService {
 
   reset() {
     this.history?.reset();
-    this.paletteUndoStack.length = 0;
-    this.paletteRedoStack.length = 0;
   }
 
   undo() {
-    const didUndo = this.history?.undo() ?? false;
-    if (!didUndo) {
-      return false;
-    }
-
-    const entry = this.paletteUndoStack.pop();
-    if (entry) {
-      entry.undo();
-      this.paletteRedoStack.push(entry);
-    }
-
-    return true;
+    return this.history?.undo() ?? false;
   }
 
   redo() {
-    const didRedo = this.history?.redo() ?? false;
-    if (!didRedo) {
-      return false;
-    }
-
-    const entry = this.paletteRedoStack.pop();
-    if (entry) {
-      entry.redo();
-      this.paletteUndoStack.push(entry);
-    }
-
-    return true;
+    return this.history?.redo() ?? false;
   }
 
   runTransaction<T>(operation: () => T): T {
@@ -217,13 +188,12 @@ export class CanvasHistoryService {
 
     return this.runAsyncTransaction(async () => {
       const paletteHistory = this.preparePlainImportPalette();
+      if (paletteHistory) {
+        this.history?.requestSideEffectForNextCommit(paletteHistory);
+      }
       try {
         beforeImport?.();
         await this.callUntrackedImport(data, options);
-        if (paletteHistory) {
-          this.paletteUndoStack.push(paletteHistory);
-          this.paletteRedoStack.length = 0;
-        }
       } catch (error) {
         paletteHistory?.undo();
         throw error;
@@ -231,7 +201,7 @@ export class CanvasHistoryService {
     });
   }
 
-  private preparePlainImportPalette(): PaletteHistoryEntry | null {
+  private preparePlainImportPalette(): HistorySideEffect | null {
     const plugin = this.plugin;
     const pixelCanvas = this.pixelCanvas;
     const paintState = usePaintStore.getState();
