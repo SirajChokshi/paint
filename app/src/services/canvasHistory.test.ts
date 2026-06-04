@@ -325,6 +325,32 @@ describe("CanvasHistoryService", () => {
     expect(imported.pixelCanvas.palette).toBe(PAINT_APP_PALETTE);
   });
 
+  it("reverts palette when a plain import leaves the canvas unchanged", async () => {
+    resetPaintStore();
+    const history = new CanvasHistoryService();
+    const imported = createPixelCanvasWithPaletteImport(
+      8,
+      CUSTOM_IMAGE_PALETTE,
+    );
+    usePaintStore.setState({
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColorIndex: 1,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+    });
+
+    history.bind(imported.pixelCanvas);
+    await history.import("8");
+
+    expect(imported.renderer.value).toBe(8);
+    expect(imported.pixelCanvas.palette).toBe(CUSTOM_IMAGE_PALETTE);
+    expect(usePaintStore.getState()).toMatchObject({
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+      selectedColorIndex: 1,
+    });
+    expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
+  });
+
   it("keeps toybox palette when undoing a stroke after a plain import", async () => {
     resetPaintStore();
     const history = new CanvasHistoryService();

@@ -41,6 +41,7 @@ export class HistoryStackService<TSnapshot> {
   private transactionBefore: TSnapshot | null = null;
   private isApplyingHistory = false;
   private pendingSideEffect: HistorySideEffect | null = null;
+  private releasedSideEffect: HistorySideEffect | null = null;
 
   constructor(
     target: SnapshotTarget<TSnapshot>,
@@ -71,7 +72,15 @@ export class HistoryStackService<TSnapshot> {
     this.redoStack.length = 0;
     this.transactionDepth = 0;
     this.transactionBefore = null;
+    this.pendingSideEffect = null;
+    this.releasedSideEffect = null;
     this.emit();
+  }
+
+  consumeReleasedSideEffect() {
+    const sideEffect = this.releasedSideEffect;
+    this.releasedSideEffect = null;
+    return sideEffect;
   }
 
   runTransaction<T>(operation: () => T): T {
@@ -163,11 +172,16 @@ export class HistoryStackService<TSnapshot> {
     const before = this.transactionBefore;
     this.transactionBefore = null;
     if (before === null) {
+      this.pendingSideEffect = null;
       return;
     }
 
     const after = this.target.getSnapshot();
     if (this.snapshotsEqual(before, after)) {
+      if (this.pendingSideEffect) {
+        this.releasedSideEffect = this.pendingSideEffect;
+        this.pendingSideEffect = null;
+      }
       return;
     }
 

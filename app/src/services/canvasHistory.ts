@@ -198,7 +198,14 @@ export class CanvasHistoryService {
         paletteHistory?.undo();
         throw error;
       }
+    }).then((result) => {
+      this.consumeReleasedImportPaletteSideEffect();
+      return result;
     });
+  }
+
+  private consumeReleasedImportPaletteSideEffect() {
+    this.history?.consumeReleasedSideEffect()?.undo();
   }
 
   private preparePlainImportPalette(): HistorySideEffect | null {

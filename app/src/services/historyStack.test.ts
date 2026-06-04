@@ -157,6 +157,37 @@ describe("HistoryStackService", () => {
     expect(canvas.value).toBe("imported");
   });
 
+  it("releases pending side effects when a transaction records no history", () => {
+    const canvas = createStringTarget("blank");
+    const history = new HistoryStackService(canvas.target);
+    const calls: string[] = [];
+
+    history.requestSideEffectForNextCommit({
+      undo: () => {
+        calls.push("orphan-undo");
+      },
+      redo: () => {
+        calls.push("orphan-redo");
+      },
+    });
+    history.runTransaction(() => {
+      canvas.value = "blank";
+    });
+
+    const released = history.consumeReleasedSideEffect();
+    expect(released).not.toBeNull();
+    released?.undo();
+    expect(calls).toEqual(["orphan-undo"]);
+    expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
+
+    history.runTransaction(() => {
+      canvas.value = "stroke";
+    });
+
+    expect(history.undo()).toBe(true);
+    expect(calls).toEqual(["orphan-undo"]);
+  });
+
   it("runs side effects only when undoing or redoing the entry they belong to", () => {
     const canvas = createStringTarget("blank");
     const history = new HistoryStackService(canvas.target);
