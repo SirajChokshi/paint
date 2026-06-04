@@ -16,6 +16,11 @@ export type CanvasSnapshot = ImageData;
 type CanvasHistoryListener = (state: HistoryStackState) => void;
 type PaletteRestore = () => void;
 
+interface PaletteHistoryEntry {
+  undo: PaletteRestore;
+  redo: PaletteRestore;
+}
+
 interface CanvasMutationPlugin {
   clear: PixelCanvas["clear"];
   fill: PixelCanvas["fill"];
@@ -62,6 +67,8 @@ export class CanvasHistoryService {
   private plugin: CanvasMutationPlugin | null = null;
   private listeners = new Set<CanvasHistoryListener>();
   private unsubscribeHistory: (() => void) | null = null;
+  private paletteUndoStack: PaletteHistoryEntry[] = [];
+  private paletteRedoStack: PaletteHistoryEntry[] = [];
 
   getState(): HistoryStackState {
     return this.history?.getState() ?? { canUndo: false, canRedo: false };
@@ -92,14 +99,38 @@ export class CanvasHistoryService {
 
   reset() {
     this.history?.reset();
+    this.paletteUndoStack.length = 0;
+    this.paletteRedoStack.length = 0;
   }
 
   undo() {
-    return this.history?.undo() ?? false;
+    const didUndo = this.history?.undo() ?? false;
+    if (!didUndo) {
+      return false;
+    }
+
+    const entry = this.paletteUndoStack.pop();
+    if (entry) {
+      entry.undo();
+      this.paletteRedoStack.push(entry);
+    }
+
+    return true;
   }
 
   redo() {
-    return this.history?.redo() ?? false;
+    const didRedo = this.history?.redo() ?? false;
+    if (!didRedo) {
+      return false;
+    }
+
+    const entry = this.paletteRedoStack.pop();
+    if (entry) {
+      entry.redo();
+      this.paletteUndoStack.push(entry);
+    }
+
+    return true;
   }
 
   runTransaction<T>(operation: () => T): T {
@@ -185,18 +216,22 @@ export class CanvasHistoryService {
     }
 
     return this.runAsyncTransaction(async () => {
-      const restorePalette = this.preparePlainImportPalette();
+      const paletteHistory = this.preparePlainImportPalette();
       try {
         beforeImport?.();
         await this.callUntrackedImport(data, options);
+        if (paletteHistory) {
+          this.paletteUndoStack.push(paletteHistory);
+          this.paletteRedoStack.length = 0;
+        }
       } catch (error) {
-        restorePalette?.();
+        paletteHistory?.undo();
         throw error;
       }
     });
   }
 
-  private preparePlainImportPalette(): PaletteRestore | null {
+  private preparePlainImportPalette(): PaletteHistoryEntry | null {
     const plugin = this.plugin;
     const pixelCanvas = this.pixelCanvas;
     const paintState = usePaintStore.getState();
@@ -222,9 +257,23 @@ export class CanvasHistoryService {
     });
     plugin.setPalette(PAINT_APP_PALETTE, { remap: false });
 
-    return () => {
-      usePaintStore.setState(previousPaintState);
-      plugin.setPalette(previousCanvasPalette, { remap: false });
+    const selectedColorIndex = paintState.selectedColorIndex;
+    return {
+      undo: () => {
+        usePaintStore.setState(previousPaintState);
+        plugin.setPalette(previousCanvasPalette, { remap: false });
+      },
+      redo: () => {
+        usePaintStore.setState({
+          paletteId: DEFAULT_PAINT_PALETTE_ID,
+          customPalette: null,
+          selectedColor: getPaintPaletteColor(
+            DEFAULT_PAINT_PALETTE_ID,
+            selectedColorIndex,
+          ),
+        });
+        plugin.setPalette(PAINT_APP_PALETTE, { remap: false });
+      },
     };
   }
 

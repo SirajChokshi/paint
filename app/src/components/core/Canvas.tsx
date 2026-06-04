@@ -233,7 +233,7 @@ export default function PixelCanvasRenderer() {
     const snappedPoint = snapPointToGrid(point, BRUSH_SIZE);
     setCursorPoint(snappedPoint);
 
-    return point;
+    return snappedPoint;
   }
 
   return (
