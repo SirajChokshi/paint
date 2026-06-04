@@ -157,6 +157,75 @@ describe("HistoryStackService", () => {
     expect(canvas.value).toBe("imported");
   });
 
+  it("releases pending side effects when a transaction records no history", () => {
+    const canvas = createStringTarget("blank");
+    const history = new HistoryStackService(canvas.target);
+    const calls: string[] = [];
+
+    history.requestSideEffectForNextCommit({
+      undo: () => {
+        calls.push("orphan-undo");
+      },
+      redo: () => {
+        calls.push("orphan-redo");
+      },
+    });
+    history.runTransaction(() => {
+      canvas.value = "blank";
+    });
+
+    const released = history.consumeReleasedSideEffect();
+    expect(released).not.toBeNull();
+    released?.undo();
+    expect(calls).toEqual(["orphan-undo"]);
+    expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
+
+    history.runTransaction(() => {
+      canvas.value = "stroke";
+    });
+
+    expect(history.undo()).toBe(true);
+    expect(calls).toEqual(["orphan-undo"]);
+  });
+
+  it("runs side effects only when undoing or redoing the entry they belong to", () => {
+    const canvas = createStringTarget("blank");
+    const history = new HistoryStackService(canvas.target);
+    const calls: string[] = [];
+
+    history.requestSideEffectForNextCommit({
+      undo: () => {
+        calls.push("palette-undo");
+      },
+      redo: () => {
+        calls.push("palette-redo");
+      },
+    });
+    history.runTransaction(() => {
+      canvas.value = "imported";
+    });
+
+    history.runTransaction(() => {
+      canvas.value = "stroked";
+    });
+
+    expect(history.undo()).toBe(true);
+    expect(canvas.value).toBe("imported");
+    expect(calls).toEqual([]);
+
+    expect(history.undo()).toBe(true);
+    expect(canvas.value).toBe("blank");
+    expect(calls).toEqual(["palette-undo"]);
+
+    expect(history.redo()).toBe(true);
+    expect(canvas.value).toBe("imported");
+    expect(calls).toEqual(["palette-undo", "palette-redo"]);
+
+    expect(history.redo()).toBe(true);
+    expect(canvas.value).toBe("stroked");
+    expect(calls).toEqual(["palette-undo", "palette-redo"]);
+  });
+
   it("keeps only the configured number of undo snapshots", () => {
     const canvas = createStringTarget("0");
     const history = new HistoryStackService(canvas.target, { maxUndoDepth: 2 });

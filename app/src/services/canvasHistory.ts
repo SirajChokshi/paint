@@ -3,7 +3,11 @@ import {
   type Palette,
   type PixelCanvasImportOptions,
 } from "pixel-paint";
-import { HistoryStackService, HistoryStackState } from "./historyStack";
+import {
+  HistoryStackService,
+  HistoryStackState,
+  type HistorySideEffect,
+} from "./historyStack";
 import { usePaintStore, type PaintStore } from "../stores/paintStore";
 import {
   DEFAULT_PAINT_PALETTE_ID,
@@ -14,7 +18,6 @@ import {
 export type CanvasSnapshot = ImageData;
 
 type CanvasHistoryListener = (state: HistoryStackState) => void;
-type PaletteRestore = () => void;
 
 interface CanvasMutationPlugin {
   clear: PixelCanvas["clear"];
@@ -62,7 +65,6 @@ export class CanvasHistoryService {
   private plugin: CanvasMutationPlugin | null = null;
   private listeners = new Set<CanvasHistoryListener>();
   private unsubscribeHistory: (() => void) | null = null;
-
   getState(): HistoryStackState {
     return this.history?.getState() ?? { canUndo: false, canRedo: false };
   }
@@ -185,18 +187,28 @@ export class CanvasHistoryService {
     }
 
     return this.runAsyncTransaction(async () => {
-      const restorePalette = this.preparePlainImportPalette();
+      const paletteHistory = this.preparePlainImportPalette();
+      if (paletteHistory) {
+        this.history?.requestSideEffectForNextCommit(paletteHistory);
+      }
       try {
         beforeImport?.();
         await this.callUntrackedImport(data, options);
       } catch (error) {
-        restorePalette?.();
+        paletteHistory?.undo();
         throw error;
       }
+    }).then((result) => {
+      this.consumeReleasedImportPaletteSideEffect();
+      return result;
     });
   }
 
-  private preparePlainImportPalette(): PaletteRestore | null {
+  private consumeReleasedImportPaletteSideEffect() {
+    this.history?.consumeReleasedSideEffect()?.undo();
+  }
+
+  private preparePlainImportPalette(): HistorySideEffect | null {
     const plugin = this.plugin;
     const pixelCanvas = this.pixelCanvas;
     const paintState = usePaintStore.getState();
@@ -222,9 +234,23 @@ export class CanvasHistoryService {
     });
     plugin.setPalette(PAINT_APP_PALETTE, { remap: false });
 
-    return () => {
-      usePaintStore.setState(previousPaintState);
-      plugin.setPalette(previousCanvasPalette, { remap: false });
+    const selectedColorIndex = paintState.selectedColorIndex;
+    return {
+      undo: () => {
+        usePaintStore.setState(previousPaintState);
+        plugin.setPalette(previousCanvasPalette, { remap: false });
+      },
+      redo: () => {
+        usePaintStore.setState({
+          paletteId: DEFAULT_PAINT_PALETTE_ID,
+          customPalette: null,
+          selectedColor: getPaintPaletteColor(
+            DEFAULT_PAINT_PALETTE_ID,
+            selectedColorIndex,
+          ),
+        });
+        plugin.setPalette(PAINT_APP_PALETTE, { remap: false });
+      },
     };
   }
 

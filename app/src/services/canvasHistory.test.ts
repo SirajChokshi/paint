@@ -291,6 +291,98 @@ describe("CanvasHistoryService", () => {
     });
   });
 
+  it("restores an active custom image palette when undoing a successful plain import", async () => {
+    resetPaintStore();
+    const history = new CanvasHistoryService();
+    const imported = createPixelCanvasWithPaletteImport(
+      4,
+      CUSTOM_IMAGE_PALETTE,
+    );
+    usePaintStore.setState({
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColorIndex: 1,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+    });
+
+    history.bind(imported.pixelCanvas);
+    await history.import("8");
+
+    expect(usePaintStore.getState().customPalette).toBeNull();
+    expect(imported.pixelCanvas.palette).toBe(PAINT_APP_PALETTE);
+
+    expect(history.undo()).toBe(true);
+    expect(imported.renderer.value).toBe(4);
+    expect(imported.pixelCanvas.palette).toBe(CUSTOM_IMAGE_PALETTE);
+    expect(usePaintStore.getState()).toMatchObject({
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+      selectedColorIndex: 1,
+    });
+
+    expect(history.redo()).toBe(true);
+    expect(imported.renderer.value).toBe(8);
+    expect(usePaintStore.getState().customPalette).toBeNull();
+    expect(imported.pixelCanvas.palette).toBe(PAINT_APP_PALETTE);
+  });
+
+  it("reverts palette when a plain import leaves the canvas unchanged", async () => {
+    resetPaintStore();
+    const history = new CanvasHistoryService();
+    const imported = createPixelCanvasWithPaletteImport(
+      8,
+      CUSTOM_IMAGE_PALETTE,
+    );
+    usePaintStore.setState({
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColorIndex: 1,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+    });
+
+    history.bind(imported.pixelCanvas);
+    await history.import("8");
+
+    expect(imported.renderer.value).toBe(8);
+    expect(imported.pixelCanvas.palette).toBe(CUSTOM_IMAGE_PALETTE);
+    expect(usePaintStore.getState()).toMatchObject({
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+      selectedColorIndex: 1,
+    });
+    expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
+  });
+
+  it("keeps toybox palette when undoing a stroke after a plain import", async () => {
+    resetPaintStore();
+    const history = new CanvasHistoryService();
+    const imported = createPixelCanvasWithPaletteImport(
+      4,
+      CUSTOM_IMAGE_PALETTE,
+    );
+    usePaintStore.setState({
+      customPalette: CUSTOM_IMAGE_PALETTE,
+      selectedColorIndex: 1,
+      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+    });
+
+    history.bind(imported.pixelCanvas);
+    await history.import("8");
+
+    imported.pixelCanvas.fill(0, 0);
+
+    expect(imported.renderer.value).toBe(1);
+    expect(usePaintStore.getState().customPalette).toBeNull();
+
+    expect(history.undo()).toBe(true);
+    expect(imported.renderer.value).toBe(8);
+    expect(imported.pixelCanvas.palette).toBe(PAINT_APP_PALETTE);
+    expect(usePaintStore.getState().customPalette).toBeNull();
+
+    expect(history.undo()).toBe(true);
+    expect(imported.renderer.value).toBe(4);
+    expect(imported.pixelCanvas.palette).toBe(CUSTOM_IMAGE_PALETTE);
+    expect(usePaintStore.getState().customPalette).toBe(CUSTOM_IMAGE_PALETTE);
+  });
+
   it("restores an active custom image palette when a plain import fails", async () => {
     resetPaintStore();
     const history = new CanvasHistoryService();

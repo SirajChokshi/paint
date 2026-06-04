@@ -176,7 +176,9 @@ export default function Desktop() {
             onClick={handleClickFactory(file)}
             onOpen={() => {
               void canvasHistory
-                .replaceWithImport(file.payload)
+                .replaceWithImport(file.payload, {
+                  resolution: "renderer",
+                })
                 .catch(reportPixelImportError);
               setActive(null);
             }}

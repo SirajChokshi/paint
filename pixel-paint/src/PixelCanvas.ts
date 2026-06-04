@@ -178,9 +178,9 @@ export class PixelCanvas {
     const x2 = (x / this.pixelSize) | 0;
     const y2 = (y / this.pixelSize) | 0;
     const dx = Math.abs(x2 - x1);
-    const sx = x1 < x2 ? 1 : -1;
+    const sx = x1 < x2 ? 1 : x1 > x2 ? -1 : 0;
     const dy = -Math.abs(y2 - y1);
-    const sy = y1 < y2 ? 1 : -1;
+    const sy = y1 < y2 ? 1 : y1 > y2 ? -1 : 0;
 
     let e2;
     let er = dx + dy;
@@ -285,6 +285,16 @@ export class PixelCanvas {
     );
 
     this.renderer.fillStyle = currentFillStyle;
+
+    if (this.data.length > 0) {
+      this.data.fill(0);
+    }
+
+    const logical = this.ctx;
+    const logicalFill = logical.fillStyle;
+    logical.fillStyle = "#ffffff";
+    logical.fillRect(0, 0, logical.canvas.width, logical.canvas.height);
+    logical.fillStyle = logicalFill;
   }
 
   export() {

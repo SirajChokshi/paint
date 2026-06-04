@@ -86,6 +86,50 @@ function createPixelCanvas() {
   };
 }
 
+describe("PixelCanvas.lineTo", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("completes vertical and horizontal segments without hanging", () => {
+    const { pixelCanvas } = createPixelCanvas();
+    pixelCanvas.setPixelSize(10);
+
+    pixelCanvas.beginPath();
+    pixelCanvas.moveTo(0, 0);
+    expect(() => pixelCanvas.lineTo(0, 50)).not.toThrow();
+    expect(pixelCanvas.cursor).toEqual({ x: 0, y: 5 });
+
+    pixelCanvas.beginPath();
+    pixelCanvas.moveTo(0, 0);
+    expect(() => pixelCanvas.lineTo(50, 0)).not.toThrow();
+    expect(pixelCanvas.cursor).toEqual({ x: 5, y: 0 });
+  });
+});
+
+describe("PixelCanvas.clear", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("clears the logical stroke buffer as well as the renderer", () => {
+    const { logical, pixelCanvas } = createPixelCanvas();
+    pixelCanvas.setPixelSize(10);
+    pixelCanvas.color = "#ff0000";
+    pixelCanvas.beginPath();
+    pixelCanvas.moveTo(0, 0);
+    pixelCanvas.lineTo(10, 0);
+    pixelCanvas.stroke();
+
+    expect(pixelCanvas.data.some((value) => value !== 0)).toBe(true);
+
+    pixelCanvas.clear();
+
+    expect(pixelCanvas.data.every((value) => value === 0)).toBe(true);
+    expect(logical.fillRect).toHaveBeenCalled();
+  });
+});
+
 describe("PixelCanvas.import", () => {
   beforeEach(() => {
     StubImage.instances = [];

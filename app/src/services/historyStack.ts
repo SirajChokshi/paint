@@ -9,6 +9,16 @@ export interface HistoryStackState {
   canRedo: boolean;
 }
 
+export interface HistorySideEffect {
+  undo: () => void;
+  redo: () => void;
+}
+
+interface HistoryUndoEntry<TSnapshot> {
+  snapshot: TSnapshot;
+  sideEffect?: HistorySideEffect;
+}
+
 interface HistoryStackOptions {
   maxUndoDepth?: number;
 }
@@ -24,12 +34,14 @@ function defaultIsEqual<TSnapshot>(a: TSnapshot, b: TSnapshot) {
 export class HistoryStackService<TSnapshot> {
   private readonly target: SnapshotTarget<TSnapshot>;
   private readonly maxUndoDepth: number;
-  private readonly undoStack: TSnapshot[] = [];
-  private readonly redoStack: TSnapshot[] = [];
+  private readonly undoStack: HistoryUndoEntry<TSnapshot>[] = [];
+  private readonly redoStack: HistoryUndoEntry<TSnapshot>[] = [];
   private readonly listeners = new Set<Listener>();
   private transactionDepth = 0;
   private transactionBefore: TSnapshot | null = null;
   private isApplyingHistory = false;
+  private pendingSideEffect: HistorySideEffect | null = null;
+  private releasedSideEffect: HistorySideEffect | null = null;
 
   constructor(
     target: SnapshotTarget<TSnapshot>,
@@ -60,7 +72,15 @@ export class HistoryStackService<TSnapshot> {
     this.redoStack.length = 0;
     this.transactionDepth = 0;
     this.transactionBefore = null;
+    this.pendingSideEffect = null;
+    this.releasedSideEffect = null;
     this.emit();
+  }
+
+  consumeReleasedSideEffect() {
+    const sideEffect = this.releasedSideEffect;
+    this.releasedSideEffect = null;
+    return sideEffect;
   }
 
   runTransaction<T>(operation: () => T): T {
@@ -89,27 +109,39 @@ export class HistoryStackService<TSnapshot> {
     }
   }
 
+  requestSideEffectForNextCommit(sideEffect: HistorySideEffect) {
+    this.pendingSideEffect = sideEffect;
+  }
+
   undo() {
-    const previous = this.undoStack.pop();
-    if (previous === undefined) {
+    const entry = this.undoStack.pop();
+    if (entry === undefined) {
       return false;
     }
 
-    this.redoStack.push(this.target.getSnapshot());
-    this.applyHistorySnapshot(previous);
+    this.redoStack.push({
+      snapshot: this.target.getSnapshot(),
+      sideEffect: entry.sideEffect,
+    });
+    this.applyHistorySnapshot(entry.snapshot);
+    entry.sideEffect?.undo();
     this.emit();
 
     return true;
   }
 
   redo() {
-    const next = this.redoStack.pop();
-    if (next === undefined) {
+    const entry = this.redoStack.pop();
+    if (entry === undefined) {
       return false;
     }
 
-    this.undoStack.push(this.target.getSnapshot());
-    this.applyHistorySnapshot(next);
+    this.undoStack.push({
+      snapshot: this.target.getSnapshot(),
+      sideEffect: entry.sideEffect,
+    });
+    this.applyHistorySnapshot(entry.snapshot);
+    entry.sideEffect?.redo();
     this.emit();
 
     return true;
@@ -140,15 +172,24 @@ export class HistoryStackService<TSnapshot> {
     const before = this.transactionBefore;
     this.transactionBefore = null;
     if (before === null) {
+      this.pendingSideEffect = null;
       return;
     }
 
     const after = this.target.getSnapshot();
     if (this.snapshotsEqual(before, after)) {
+      if (this.pendingSideEffect) {
+        this.releasedSideEffect = this.pendingSideEffect;
+        this.pendingSideEffect = null;
+      }
       return;
     }
 
-    this.undoStack.push(before);
+    this.undoStack.push({
+      snapshot: before,
+      sideEffect: this.pendingSideEffect ?? undefined,
+    });
+    this.pendingSideEffect = null;
     if (this.undoStack.length > this.maxUndoDepth) {
       this.undoStack.shift();
     }
@@ -164,6 +205,7 @@ export class HistoryStackService<TSnapshot> {
     this.transactionDepth = 0;
     const before = this.transactionBefore;
     this.transactionBefore = null;
+    this.pendingSideEffect = null;
     if (before !== null) {
       this.applyHistorySnapshot(before);
     }
