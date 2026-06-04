@@ -9,6 +9,14 @@ This is a pnpm monorepo with two packages: `pixel-paint` (core canvas library) a
 - Node.js 24 (see `.nvmrc`)
 - pnpm 10.17.1 (managed via corepack, see `packageManager` in root `package.json`)
 
+Cloud VM shells may default to an older Node version. Before any `pnpm` command, activate Node 24:
+
+```bash
+export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use 24
+```
+
+After `pnpm install`, run `pnpm build` once before starting the dev server (the update script does not run builds automatically).
+
 ### Quick reference
 
 | Task | Command |
