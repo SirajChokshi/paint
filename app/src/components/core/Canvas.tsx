@@ -293,7 +293,6 @@ export default function PixelCanvasRenderer() {
           }}
           onPointerLeave={() => {
             setCursorPoint(null);
-            cancelDrawing();
           }}
           onContextMenu={(e) => {
             e.preventDefault();
