@@ -1,8 +1,13 @@
 import styled from "@emotion/styled";
 import {
   getActivePaintPalette,
+  getForegroundColor,
   usePaintStore,
 } from "../../stores/paintStore";
+import {
+  getBackgroundCssBackground,
+  isTransparentBackground,
+} from "../../lib/paintColor";
 
 const ToolGrid = styled.div`
   display: flex;
@@ -186,25 +191,43 @@ const FgBgPreview = styled.div`
   height: 30px;
 `;
 
-const BgBox = styled.div`
+const ColorWell = styled.button<{ isActive?: boolean }>`
+  all: unset;
+  box-sizing: border-box;
   position: absolute;
+  cursor: default;
+  border: 1px solid var(--mac-black);
+  image-rendering: pixelated;
+
+  ${({ isActive }) =>
+    isActive
+      ? `
+    outline: 2px solid var(--mac-black);
+    outline-offset: -3px;
+  `
+      : ""}
+
+  &:active {
+    opacity: 0.85;
+  }
+`;
+
+const BgBox = styled(ColorWell)<{ $background: string }>`
   bottom: 0;
   right: 0;
   width: 20px;
   height: 20px;
-  background: var(--mac-white);
-  border: 1px solid var(--mac-black);
+  background: ${({ $background }) => $background};
+  background-size: 8px 8px;
   z-index: 1;
 `;
 
-const FgBox = styled.div<{ color: string }>`
-  position: absolute;
+const FgBox = styled(ColorWell)<{ color: string }>`
   top: 0;
   left: 0;
   width: 20px;
   height: 20px;
   background: ${({ color }) => color};
-  border: 1px solid var(--mac-black);
   z-index: 2;
 `;
 
@@ -244,16 +267,21 @@ const ColorGrid = styled.div`
 `;
 
 export default function Tools() {
+  const paintState = usePaintStore();
   const {
     paletteId,
     customPalette,
-    selectedColor,
-    selectedColorIndex,
-    setSelectedColorIndex,
+    foregroundColorIndex,
+    backgroundColor,
+    activeColorSlot,
+    setActiveColorSlot,
+    setBackgroundTransparent,
+    setPaletteColorIndex,
     toolMode,
     setToolMode: setStoreToolMode,
-  } = usePaintStore();
+  } = paintState;
   const palette = getActivePaintPalette({ paletteId, customPalette });
+  const foregroundColor = getForegroundColor(paintState);
 
   return (
     <ToolGrid>
@@ -293,8 +321,27 @@ export default function Tools() {
       </ToolSection>
       <FgBgSection>
         <FgBgPreview>
-          <FgBox color={selectedColor} />
-          <BgBox />
+          <FgBox
+            type="button"
+            color={foregroundColor}
+            isActive={activeColorSlot === "fg"}
+            title="Foreground color"
+            aria-label="Select foreground color"
+            onClick={() => setActiveColorSlot("fg")}
+          />
+          <BgBox
+            type="button"
+            $background={getBackgroundCssBackground(backgroundColor)}
+            isActive={activeColorSlot === "bg"}
+            title={
+              isTransparentBackground(backgroundColor)
+                ? "Background: transparent"
+                : `Background: ${backgroundColor}`
+            }
+            aria-label="Select background color"
+            onClick={() => setActiveColorSlot("bg")}
+            onDoubleClick={() => setBackgroundTransparent()}
+          />
         </FgBgPreview>
       </FgBgSection>
       <ColorGrid>
@@ -302,15 +349,18 @@ export default function Tools() {
           <ColorSwatch
             key={color}
             swatchColor={color}
-            isSelected={selectedColorIndex === colorIndex && toolMode !== "erase"}
-            aria-label={`Set drawing color to ${color}`}
+            isSelected={
+              activeColorSlot === "bg"
+                ? backgroundColor === color
+                : foregroundColorIndex === colorIndex
+            }
+            aria-label={
+              activeColorSlot === "bg"
+                ? `Set background color to ${color}`
+                : `Set foreground color to ${color}`
+            }
             title={color}
-            onClick={() => {
-              setSelectedColorIndex(colorIndex);
-              if (toolMode === "erase") {
-                setStoreToolMode("pencil");
-              }
-            }}
+            onClick={() => setPaletteColorIndex(colorIndex)}
           />
         ))}
       </ColorGrid>

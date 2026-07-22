@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Palette } from "pixel-paint";
+import { TRANSPARENT_COLOR } from "pixel-paint";
 import {
   DEFAULT_PAINT_PALETTE_ID,
-  getPaintPaletteColor,
   getPaintPaletteColorIndex,
   getPaintPalette,
   type PaintPaletteId,
@@ -11,16 +11,25 @@ import {
 
 export type PaintTool = "pencil" | "line" | "fill" | "erase";
 
+export type BackgroundColor = typeof TRANSPARENT_COLOR | string;
+
+export type ActiveColorSlot = "fg" | "bg";
+
 const PAINT_STORE_KEY = "sirajchokshi$paint@paint";
+const PAINT_STORE_VERSION = 1;
 
 export interface PaintStore {
-  selectedColor: string;
-  selectedColorIndex: number;
+  foregroundColorIndex: number;
+  backgroundColor: BackgroundColor;
+  activeColorSlot: ActiveColorSlot;
   paletteId: PaintPaletteId;
   customPalette: Palette | null;
   toolMode: PaintTool;
-  setSelectedColor: (color: string) => void;
-  setSelectedColorIndex: (colorIndex: number) => void;
+  setForegroundColorIndex: (colorIndex: number) => void;
+  setBackgroundColor: (color: BackgroundColor) => void;
+  setBackgroundTransparent: () => void;
+  setActiveColorSlot: (slot: ActiveColorSlot) => void;
+  setPaletteColorIndex: (colorIndex: number) => void;
   setPaletteId: (paletteId: PaintPaletteId) => void;
   setCustomPalette: (palette: Palette) => void;
   setToolMode: (toolMode: PaintTool) => void;
@@ -32,61 +41,147 @@ export function getActivePaintPalette(
   return state.customPalette ?? getPaintPalette(state.paletteId);
 }
 
+export function getForegroundColor(
+  state: Pick<
+    PaintStore,
+    "paletteId" | "customPalette" | "foregroundColorIndex"
+  >,
+): string {
+  const palette = getActivePaintPalette(state);
+  return palette[state.foregroundColorIndex] ?? palette[0] ?? "#000000";
+}
+
+export function getDrawColor(
+  state: Pick<
+    PaintStore,
+    | "paletteId"
+    | "customPalette"
+    | "foregroundColorIndex"
+    | "backgroundColor"
+    | "toolMode"
+  >,
+): string {
+  if (state.toolMode === "erase") {
+    return state.backgroundColor;
+  }
+
+  return getForegroundColor(state);
+}
+
+interface PersistedPaintStoreV0 {
+  selectedColor?: string;
+  selectedColorIndex?: number;
+  paletteId?: PaintPaletteId;
+  customPalette?: Palette | null;
+}
+
+interface PersistedPaintStoreV1 {
+  foregroundColorIndex?: number;
+  backgroundColor?: BackgroundColor;
+  activeColorSlot?: ActiveColorSlot;
+  paletteId?: PaintPaletteId;
+  customPalette?: Palette | null;
+}
+
 export const usePaintStore = create<PaintStore>()(
   persist(
     (set) => ({
-      selectedColor: "#000000",
-      selectedColorIndex: 0,
+      foregroundColorIndex: 0,
+      backgroundColor: TRANSPARENT_COLOR,
+      activeColorSlot: "fg",
       paletteId: DEFAULT_PAINT_PALETTE_ID,
       customPalette: null,
       toolMode: "pencil",
-      setSelectedColor: (selectedColor) =>
+      setForegroundColorIndex: (foregroundColorIndex) =>
         set((state) => {
           const palette = getActivePaintPalette(state);
-          const selectedColorIndex = getPaintPaletteColorIndex(
-            selectedColor,
-            palette,
+          const clampedIndex = Math.max(
+            0,
+            Math.min(foregroundColorIndex, palette.length - 1),
           );
+
+          return { foregroundColorIndex: clampedIndex };
+        }),
+      setBackgroundColor: (backgroundColor) =>
+        set((state) => {
+          if (backgroundColor === TRANSPARENT_COLOR) {
+            return { backgroundColor: TRANSPARENT_COLOR };
+          }
+
+          const palette = getActivePaintPalette(state);
+          const normalized = getPaintPaletteColorIndex(backgroundColor, palette);
           return {
-            selectedColorIndex,
-            selectedColor: palette[selectedColorIndex] ?? palette[0] ?? "#000000",
+            backgroundColor: palette[normalized] ?? palette[0] ?? "#ffffff",
           };
         }),
-      setSelectedColorIndex: (selectedColorIndex) =>
+      setBackgroundTransparent: () =>
+        set({ backgroundColor: TRANSPARENT_COLOR }),
+      setActiveColorSlot: (activeColorSlot) => set({ activeColorSlot }),
+      setPaletteColorIndex: (colorIndex) =>
         set((state) => {
           const palette = getActivePaintPalette(state);
+          const clampedIndex = Math.max(
+            0,
+            Math.min(colorIndex, palette.length - 1),
+          );
+
+          if (state.activeColorSlot === "bg") {
+            return {
+              backgroundColor: palette[clampedIndex] ?? palette[0] ?? "#ffffff",
+            };
+          }
 
           return {
-            selectedColorIndex,
-            selectedColor: palette[selectedColorIndex] ?? palette[0] ?? "#000000",
+            foregroundColorIndex: clampedIndex,
+            activeColorSlot: "fg",
           };
+        }),
+      setToolMode: (toolMode) =>
+        set({
+          toolMode,
+          activeColorSlot: toolMode === "erase" ? "bg" : "fg",
         }),
       setPaletteId: (paletteId) =>
         set((state) => ({
           paletteId,
           customPalette: null,
-          selectedColor: getPaintPaletteColor(
-            paletteId,
-            state.selectedColorIndex,
+          foregroundColorIndex: Math.min(
+            state.foregroundColorIndex,
+            getPaintPalette(paletteId).length - 1,
           ),
         })),
       setCustomPalette: (customPalette) =>
         set((state) => ({
           customPalette,
-          selectedColor:
-            customPalette[state.selectedColorIndex] ??
-            customPalette[0] ??
-            "#000000",
+          foregroundColorIndex: Math.min(
+            state.foregroundColorIndex,
+            customPalette.length - 1,
+          ),
         })),
-      setToolMode: (toolMode) => set({ toolMode }),
     }),
     {
       name: PAINT_STORE_KEY,
+      version: PAINT_STORE_VERSION,
+      migrate: (persistedState, version) => {
+        if (version >= PAINT_STORE_VERSION) {
+          return persistedState as PersistedPaintStoreV1;
+        }
+
+        const legacy = persistedState as PersistedPaintStoreV0;
+        return {
+          foregroundColorIndex: legacy.selectedColorIndex ?? 0,
+          backgroundColor: TRANSPARENT_COLOR,
+          activeColorSlot: "fg",
+          paletteId: legacy.paletteId ?? DEFAULT_PAINT_PALETTE_ID,
+          customPalette: legacy.customPalette ?? null,
+        } satisfies PersistedPaintStoreV1;
+      },
       partialize: (state) => ({
+        foregroundColorIndex: state.foregroundColorIndex,
+        backgroundColor: state.backgroundColor,
+        activeColorSlot: state.activeColorSlot,
         paletteId: state.paletteId,
         customPalette: state.customPalette,
-        selectedColor: state.selectedColor,
-        selectedColorIndex: state.selectedColorIndex,
       }),
     },
   ),
