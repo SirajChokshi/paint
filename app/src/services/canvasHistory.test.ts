@@ -299,8 +299,7 @@ describe("CanvasHistoryService", () => {
     );
     usePaintStore.setState({
       customPalette: CUSTOM_IMAGE_PALETTE,
-      selectedColorIndex: 1,
-      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+      foregroundColorIndex: 1,
     });
 
     history.bind(imported.pixelCanvas);
@@ -314,8 +313,7 @@ describe("CanvasHistoryService", () => {
     expect(imported.pixelCanvas.palette).toBe(CUSTOM_IMAGE_PALETTE);
     expect(usePaintStore.getState()).toMatchObject({
       customPalette: CUSTOM_IMAGE_PALETTE,
-      selectedColor: CUSTOM_IMAGE_PALETTE[1],
-      selectedColorIndex: 1,
+      foregroundColorIndex: 1,
     });
 
     expect(history.redo()).toBe(true);
@@ -333,8 +331,7 @@ describe("CanvasHistoryService", () => {
     );
     usePaintStore.setState({
       customPalette: CUSTOM_IMAGE_PALETTE,
-      selectedColorIndex: 1,
-      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+      foregroundColorIndex: 1,
     });
 
     history.bind(imported.pixelCanvas);
@@ -344,8 +341,7 @@ describe("CanvasHistoryService", () => {
     expect(imported.pixelCanvas.palette).toBe(CUSTOM_IMAGE_PALETTE);
     expect(usePaintStore.getState()).toMatchObject({
       customPalette: CUSTOM_IMAGE_PALETTE,
-      selectedColor: CUSTOM_IMAGE_PALETTE[1],
-      selectedColorIndex: 1,
+      foregroundColorIndex: 1,
     });
     expect(history.getState()).toEqual({ canUndo: false, canRedo: false });
   });
@@ -359,8 +355,7 @@ describe("CanvasHistoryService", () => {
     );
     usePaintStore.setState({
       customPalette: CUSTOM_IMAGE_PALETTE,
-      selectedColorIndex: 1,
-      selectedColor: CUSTOM_IMAGE_PALETTE[1],
+      foregroundColorIndex: 1,
     });
 
     history.bind(imported.pixelCanvas);

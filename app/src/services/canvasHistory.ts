@@ -230,7 +230,7 @@ export class CanvasHistoryService {
     });
     plugin.setPalette(PAINT_APP_PALETTE, { remap: false });
 
-    const selectedColorIndex = paintState.selectedColorIndex;
+    const { foregroundColorIndex, backgroundColor } = paintState;
     return {
       undo: () => {
         usePaintStore.setState(previousPaintState);
@@ -240,10 +240,8 @@ export class CanvasHistoryService {
         usePaintStore.setState({
           paletteId: DEFAULT_PAINT_PALETTE_ID,
           customPalette: null,
-          selectedColor: getPaintPaletteColor(
-            DEFAULT_PAINT_PALETTE_ID,
-            selectedColorIndex,
-          ),
+          foregroundColorIndex,
+          backgroundColor,
         });
         plugin.setPalette(PAINT_APP_PALETTE, { remap: false });
       },

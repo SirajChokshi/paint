@@ -126,7 +126,7 @@ describe("PixelCanvas.clear", () => {
     pixelCanvas.clear();
 
     expect(pixelCanvas.data.every((value) => value === 0)).toBe(true);
-    expect(logical.fillRect).toHaveBeenCalled();
+    expect(logical.putImageData).toHaveBeenCalled();
   });
 });
 
@@ -142,6 +142,7 @@ describe("PixelCanvas.import", () => {
 
   it("returns a Promise that resolves after the image is imported", async () => {
     const { logical, pixelCanvas, renderer } = createPixelCanvas();
+    logical.putImageData.mockClear();
 
     const importPromise = pixelCanvas.import("data:image/png;base64,stub");
     StubImage.instances[0].onload?.();
@@ -154,6 +155,7 @@ describe("PixelCanvas.import", () => {
   it("resolves without drawing when the target canvas is empty", async () => {
     const { logical, pixelCanvas, renderer } = createPixelCanvas();
     logical.canvas.width = 0;
+    logical.putImageData.mockClear();
 
     const importPromise = pixelCanvas.import("data:image/png;base64,stub");
     StubImage.instances[0].onload?.();
